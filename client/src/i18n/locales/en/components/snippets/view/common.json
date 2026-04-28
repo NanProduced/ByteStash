@@ -9,13 +9,18 @@
     "error": {
       "sessionExpired": "Session expired. Please login again.",
       "snippetCreated": "Failed to create snippet",
-      "snippetUpdated": "Failed to update snippet"
+      "snippetUpdated": "Failed to update snippet",
+      "tagAddFailed": "Failed to add tag"
+    },
+    "info": {
+      "tagAlreadyExists": "Snippet already has this tag"
     },
     "success": {
       "displayAll": "Displaying all snippets",
       "displayFavorites": "Displaying favorite snippets",
       "snippetCreated": "New snippet created successfully",
-      "snippetUpdated": "Snippet updated successfully"
+      "snippetUpdated": "Snippet updated successfully",
+      "tagAdded": "Tag added successfully"
     }
   },
   "browsePublicSnippets": "Browse public snippets",
