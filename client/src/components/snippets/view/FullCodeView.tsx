@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
-import { Clock, PanelLeftClose, PanelLeftOpen, Search, ListFilter, Check } from "lucide-react";
+import { Clock, PanelLeftClose, PanelLeftOpen, Search, ListFilter, Check, Star } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import MarkdownRenderer from "../../common/markdown/MarkdownRenderer";
 import { useTranslation } from "react-i18next";
@@ -14,6 +14,8 @@ import {
 import { FullCodeBlock } from "../../editor/FullCodeBlock";
 import DownloadButton from "../../common/buttons/DownloadButton";
 import DownloadArchiveButton from "../../common/buttons/DownloadArchiveButton";
+import { snippetService } from "../../../service/snippetService";
+import { useToast } from "../../../hooks/useToast";
 
 interface FullCodeViewProps {
   showTitle?: boolean;
@@ -23,6 +25,7 @@ interface FullCodeViewProps {
   className?: string;
   isModal?: boolean;
   isPublicView?: boolean;
+  onFavoriteChange?: (snippet: Snippet) => void;
 }
 
 export const FullCodeView: React.FC<FullCodeViewProps> = ({
@@ -33,6 +36,7 @@ export const FullCodeView: React.FC<FullCodeViewProps> = ({
   className = "",
   isModal = false,
   isPublicView = false,
+  onFavoriteChange,
 }) => {
   const { t: translate } = useTranslation('components/snippets/view/all');
   const [activeFragmentIndex, setActiveFragmentIndex] = useState(0);
@@ -41,6 +45,13 @@ export const FullCodeView: React.FC<FullCodeViewProps> = ({
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isFavorite, setIsFavorite] = useState(snippet.is_favorite === 1);
+  const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
+  const { addToast } = useToast();
+
+  useEffect(() => {
+    setIsFavorite(snippet.is_favorite === 1);
+  }, [snippet]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -51,6 +62,34 @@ export const FullCodeView: React.FC<FullCodeViewProps> = ({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const handleToggleFavorite = async () => {
+    if (isPublicView || isFavoriteLoading) return;
+
+    setIsFavoriteLoading(true);
+    try {
+      const newFavoriteState = !isFavorite;
+      const updatedSnippet = await snippetService.setFavorite(snippet.id, newFavoriteState);
+      setIsFavorite(newFavoriteState);
+      onFavoriteChange?.(updatedSnippet);
+      addToast(
+        newFavoriteState
+          ? translate('fullCodeView.success.addedToFavorites')
+          : translate('fullCodeView.success.removedFromFavorites'),
+        "success"
+      );
+    } catch (error) {
+      console.error("Failed to toggle favorite:", error);
+      addToast(
+        isFavorite
+          ? translate('fullCodeView.error.removeFromFavorites')
+          : translate('fullCodeView.error.addToFavorites'),
+        "error"
+      );
+    } finally {
+      setIsFavoriteLoading(false);
+    }
+  };
 
   const extensionStats = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -140,13 +179,32 @@ export const FullCodeView: React.FC<FullCodeViewProps> = ({
         {/* Header Section */}
         <div>
           {showTitle && (
-            <h1
-              className={`text-xl md:text-2xl font-bold text-light-text dark:text-dark-text ${
-                isModal ? "" : "mt-2"
-              }`}
-            >
-              {snippet.title}
-            </h1>
+            <div className="flex items-start justify-between gap-4">
+              <h1
+                className={`text-xl md:text-2xl font-bold text-light-text dark:text-dark-text ${
+                  isModal ? "" : "mt-2"
+                } flex-1`}
+              >
+                {snippet.title}
+              </h1>
+              {!isPublicView && (
+                <button
+                  onClick={handleToggleFavorite}
+                  disabled={isFavoriteLoading}
+                  className={`flex items-center justify-center p-2 rounded-lg transition-all duration-200 ${
+                    isFavorite
+                      ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400"
+                      : "bg-light-hover/50 dark:bg-dark-hover/50 text-light-text-secondary dark:text-dark-text-secondary hover:bg-light-hover dark:hover:bg-dark-hover"
+                  } ${isFavoriteLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+                  title={isFavorite ? translate('fullCodeView.action.removeFromFavorites') : translate('fullCodeView.action.addToFavorites')}
+                >
+                  <Star
+                    size={20}
+                    className={isFavorite ? "fill-current" : ""}
+                  />
+                </button>
+              )}
+            </div>
           )}
 
           {/* Language Info */}

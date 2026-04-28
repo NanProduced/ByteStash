@@ -9,13 +9,18 @@
     "error": {
       "sessionExpired": "会话已过期，请重新登录。",
       "snippetCreated": "创建代码片段失败",
-      "snippetUpdated": "更新代码片段失败"
+      "snippetUpdated": "更新代码片段失败",
+      "tagAddFailed": "添加标签失败"
+    },
+    "info": {
+      "tagAlreadyExists": "该代码片段已包含此标签"
     },
     "success": {
       "displayAll": "正在显示所有代码片段",
       "displayFavorites": "正在显示收藏的代码片段",
       "snippetCreated": "新代码片段创建成功",
-      "snippetUpdated": "代码片段更新成功"
+      "snippetUpdated": "代码片段更新成功",
+      "tagAdded": "标签添加成功"
     }
   },
   "browsePublicSnippets": "浏览公开代码片段",

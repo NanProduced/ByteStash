@@ -48,6 +48,8 @@ interface SnippetCardProps {
     id: string,
     isFavorite: boolean
   ) => Promise<Snippet | undefined>;
+  onDragStart?: (e: React.DragEvent, snippetId: string) => void;
+  onDragEnd?: () => void;
 }
 
 export const SnippetCard: React.FC<SnippetCardProps> = ({
@@ -71,6 +73,8 @@ export const SnippetCard: React.FC<SnippetCardProps> = ({
   isAuthenticated,
   pinSnippet,
   favoriteSnippet,
+  onDragStart,
+  onDragEnd,
 }) => {
   const { t } = useTranslation();
   const { t: translate } = useTranslation('components/snippets/list/snippetCard');
@@ -80,6 +84,20 @@ export const SnippetCard: React.FC<SnippetCardProps> = ({
   const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
   const [isPinned, setIsPinned] = useState(snippet.is_pinned);
   const [isFavorite, setIsFavorite] = useState(snippet.is_favorite);
+
+  const handleDragStart = (e: React.DragEvent) => {
+    if (onDragStart) {
+      onDragStart(e, snippet.id);
+    }
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", snippet.id);
+  };
+
+  const handleDragEnd = (_e: React.DragEvent) => {
+    if (onDragEnd) {
+      onDragEnd();
+    }
+  };
 
   const getRelativeUpdateTime = (updatedAt: string): string => {
     const defaultUpdateTime = translate('defaultUpdateTime');
@@ -192,10 +210,15 @@ export const SnippetCard: React.FC<SnippetCardProps> = ({
   return (
     <>
       <div
+        draggable={!isRecycleView && !isPublicView}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
         className={`bg-light-surface dark:bg-dark-surface rounded-lg ${
           viewMode === "grid" ? "h-full" : "mb-4"
         }
-          cursor-pointer hover:bg-light-hover dark:hover:bg-dark-hover transition-colors relative group`}
+          cursor-pointer hover:bg-light-hover dark:hover:bg-dark-hover transition-colors relative group ${
+            !isRecycleView && !isPublicView ? "cursor-grab active:cursor-grabbing" : ""
+          }`}
         onClick={() => {
           if (!isRecycleView) onOpen(snippet);
         }}

@@ -132,7 +132,10 @@ const AuthAwareSnippetView: React.FC = () => {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-8">
       <div className="max-w-4xl mx-auto">
-        <FullCodeView snippet={snippet} />
+        <FullCodeView 
+          snippet={snippet} 
+          onFavoriteChange={(updatedSnippet) => setSnippet(updatedSnippet)}
+        />
       </div>
     </div>
   );

@@ -1,7 +1,20 @@
 {
+  "defaultUpdateTime": "Unknown",
   "fullCodeView": {
     "dateTimeAgo": "{{dateTime}} ago",
-    "defaultDescription": "No description available"
+    "defaultDescription": "No description available",
+    "action": {
+      "addToFavorites": "Add to favorites",
+      "removeFromFavorites": "Remove from favorites"
+    },
+    "success": {
+      "addedToFavorites": "Added to favorites",
+      "removedFromFavorites": "Removed from favorites"
+    },
+    "error": {
+      "addToFavorites": "Failed to add to favorites",
+      "removeFromFavorites": "Failed to remove from favorites"
+    }
   },
   "files": "files",
   "collapseSidebar": "Collapse Sidebar",
@@ -11,6 +24,22 @@
   "filterFiles": "Filter files",
   "fileExtensions": "File extensions",
   "noExtension": "No extension",
+  "sidebar": {
+    "title": "Navigation",
+    "expand": "Expand sidebar",
+    "collapse": "Collapse sidebar",
+    "clearFilters": "Clear filters",
+    "my": "My",
+    "all": "All",
+    "favorites": "Favorites",
+    "recent": "Recent",
+    "languages": "Languages",
+    "allLanguages": "All Languages",
+    "noLanguages": "No languages",
+    "tags": "Tags",
+    "noTags": "No tags",
+    "dragHint": "Drag snippet onto tags to add label"
+  },
   "snippetModal": {
     "confirmationModal": {
       "confirmLabel": {

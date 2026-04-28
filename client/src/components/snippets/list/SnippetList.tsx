@@ -27,6 +27,8 @@ export interface SnippetListProps {
     id: string,
     isFavorite: boolean
   ) => Promise<Snippet | undefined>;
+  onDragStart?: (e: React.DragEvent, snippetId: string) => void;
+  onDragEnd?: () => void;
 }
 
 const SnippetList: React.FC<SnippetListProps> = ({
@@ -50,6 +52,8 @@ const SnippetList: React.FC<SnippetListProps> = ({
   isAuthenticated,
   pinSnippet,
   favoriteSnippet,
+  onDragStart,
+  onDragEnd,
 }) => {
   const { t: translate } = useTranslation('components/snippets/list/snippetList');
 
@@ -93,6 +97,8 @@ const SnippetList: React.FC<SnippetListProps> = ({
           isAuthenticated={isAuthenticated}
           pinSnippet={pinSnippet}
           favoriteSnippet={favoriteSnippet}
+          onDragStart={onDragStart}
+          onDragEnd={onDragEnd}
         />
       ))}
     </div>
