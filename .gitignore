@@ -11,3 +11,4 @@ docker-compose-dev.yaml
 example-fragment.js
 
 .claude/
+.playwright-mcp/
