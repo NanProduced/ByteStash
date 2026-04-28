@@ -22,8 +22,8 @@
       },
       "message": {
         "isRecycleView": {
-          "false": "确定要将 “{{title}}” 移至回收站吗？",
-          "true": "确定要永久删除 “{{title}}” 吗？此操作无法撤销。"
+          "false": "确定要将 \"{{title}}\" 移至回收站吗？",
+          "true": "确定要永久删除 \"{{title}}\" 吗？此操作无法撤销。"
         }
       },
       "title": {
@@ -33,5 +33,39 @@
         }
       }
     }
+  },
+  "versionHistory": {
+    "title": "版本历史",
+    "version": "v{{number}}",
+    "current": "当前",
+    "noVersions": "暂无版本",
+    "selectedForCompare": "已选择 {{count}} 个版本",
+    "compare": "对比",
+    "view": "查看",
+    "rollback": "恢复",
+    "files": "{{count}} 个文件",
+    "files_plural": "{{count}} 个文件",
+    "selectHint": "点击选择最多 2 个版本进行对比"
+  },
+  "versionDiff": {
+    "title": "版本对比",
+    "oldVersion": "旧版本",
+    "newVersion": "新版本",
+    "oldLine": "旧行",
+    "newLine": "新行",
+    "content": "内容",
+    "files": "{{count}} 个文件已更改",
+    "modified": "已修改",
+    "noChanges": "无变化",
+    "removed": "已删除",
+    "added": "已添加"
+  },
+  "versionView": {
+    "title": "查看版本",
+    "rollback": "恢复此版本",
+    "rollbackConfirm": "确定要恢复此版本吗？这将创建一个包含此版本内容的新版本。",
+    "rollbackSuccess": "版本恢复成功",
+    "rollbackError": "恢复版本失败",
+    "subTitle": "v{{versionNumber}} - {{title}}"
   }
 }

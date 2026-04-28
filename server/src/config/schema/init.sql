@@ -62,6 +62,30 @@ CREATE TABLE IF NOT EXISTS api_keys (
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS snippet_versions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    snippet_id INTEGER NOT NULL,
+    version_number INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    categories TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    user_id INTEGER,
+    FOREIGN KEY (snippet_id) REFERENCES snippets (id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL,
+    UNIQUE(snippet_id, version_number)
+);
+
+CREATE TABLE IF NOT EXISTS snippet_version_fragments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    version_id INTEGER NOT NULL,
+    file_name TEXT NOT NULL,
+    code TEXT NOT NULL,
+    language TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    FOREIGN KEY (version_id) REFERENCES snippet_versions (id) ON DELETE CASCADE
+);
+
 CREATE INDEX IF NOT EXISTS idx_users_username ON users (username);
 
 CREATE INDEX IF NOT EXISTS idx_snippets_user_id ON snippets (user_id);
@@ -86,3 +110,9 @@ WHERE
 CREATE INDEX IF NOT EXISTS idx_api_keys_user_id ON api_keys (user_id);
 
 CREATE INDEX IF NOT EXISTS idx_api_keys_key ON api_keys (key);
+
+CREATE INDEX IF NOT EXISTS idx_snippet_versions_snippet_id ON snippet_versions (snippet_id);
+
+CREATE INDEX IF NOT EXISTS idx_snippet_versions_created_at ON snippet_versions (created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_snippet_version_fragments_version_id ON snippet_version_fragments (version_id);

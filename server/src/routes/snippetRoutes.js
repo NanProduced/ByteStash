@@ -244,4 +244,60 @@ router.patch("/:id/favorite", async (req, res) => {
   }
 });
 
+// GET versions for a snippet
+router.get("/:id/versions", async (req, res) => {
+  try {
+    const versions = await snippetService.getVersions(
+      req.params.id,
+      req.user.id
+    );
+    if (!versions) {
+      res.status(404).json({ error: "Snippet not found or access denied" });
+    } else {
+      res.json(versions);
+    }
+  } catch (error) {
+    Logger.error("Error in GET /snippets/:id/versions:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// GET specific version
+router.get("/:id/versions/:versionId", async (req, res) => {
+  try {
+    const version = await snippetService.getVersionById(
+      req.params.id,
+      req.params.versionId,
+      req.user.id
+    );
+    if (!version) {
+      res.status(404).json({ error: "Version not found or access denied" });
+    } else {
+      res.json(version);
+    }
+  } catch (error) {
+    Logger.error("Error in GET /snippets/:id/versions/:versionId:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST rollback to version
+router.post("/:id/versions/:versionId/rollback", async (req, res) => {
+  try {
+    const result = await snippetService.rollbackToVersion(
+      req.params.id,
+      req.params.versionId,
+      req.user.id
+    );
+    if (!result) {
+      res.status(404).json({ error: "Snippet or version not found" });
+    } else {
+      res.json(result);
+    }
+  } catch (error) {
+    Logger.error("Error in POST /snippets/:id/versions/:versionId/rollback:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 export default router;

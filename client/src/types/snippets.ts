@@ -36,3 +36,15 @@ export interface Share {
   created_at: string;
   expired: number;
 }
+
+export interface SnippetVersion {
+  id: string;
+  snippet_id: string;
+  version_number: number;
+  title: string;
+  description: string;
+  categories: string[];
+  fragments: CodeFragment[];
+  created_at: string;
+  user_id: string | null;
+}
