@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   Clock,
   Users,
@@ -85,19 +85,25 @@ export const SnippetCard: React.FC<SnippetCardProps> = ({
   const [isPinned, setIsPinned] = useState(snippet.is_pinned);
   const [isFavorite, setIsFavorite] = useState(snippet.is_favorite);
 
-  const handleDragStart = (e: React.DragEvent) => {
-    if (onDragStart) {
-      onDragStart(e, snippet.id);
-    }
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", snippet.id);
-  };
+  const handleDragStart = useCallback(
+    (e: React.DragEvent) => {
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", snippet.id);
+      if (onDragStart) {
+        onDragStart(e, snippet.id);
+      }
+    },
+    [snippet.id, onDragStart]
+  );
 
-  const handleDragEnd = (_e: React.DragEvent) => {
-    if (onDragEnd) {
-      onDragEnd();
-    }
-  };
+  const handleDragEnd = useCallback(
+    (_e: React.DragEvent) => {
+      if (onDragEnd) {
+        onDragEnd();
+      }
+    },
+    [onDragEnd]
+  );
 
   const getRelativeUpdateTime = (updatedAt: string): string => {
     const defaultUpdateTime = translate('defaultUpdateTime');
