@@ -1,5 +1,5 @@
 import { snippetService } from "../../service/snippetService";
-import type { Snippet } from "../../types/snippets";
+import type { Snippet, SnippetVersion } from "../../types/snippets";
 import { apiClient } from "./apiClient";
 import { API_ENDPOINTS } from "../../constants/api";
 import { createCustomEvent, EVENTS } from "../../constants/events";
@@ -101,6 +101,35 @@ export const setFavoriteSnippet = async (
     return updatedSnippet;
   } catch (error) {
     console.error("Error setting snippet favorite status:", error);
+    throw error;
+  }
+};
+
+export const getSnippetVersions = async (snippetId: string): Promise<SnippetVersion[]> => {
+  try {
+    return await apiClient.get<SnippetVersion[]>(`${API_ENDPOINTS.SNIPPETS}/${snippetId}/versions`);
+  } catch (error) {
+    console.error("Error fetching snippet versions:", error);
+    throw error;
+  }
+};
+
+export const getSnippetVersionById = async (snippetId: string, versionId: string): Promise<SnippetVersion> => {
+  try {
+    return await apiClient.get<SnippetVersion>(`${API_ENDPOINTS.SNIPPETS}/${snippetId}/versions/${versionId}`);
+  } catch (error) {
+    console.error("Error fetching snippet version:", error);
+    throw error;
+  }
+};
+
+export const rollbackToVersion = async (snippetId: string, versionId: string): Promise<Snippet> => {
+  try {
+    const result = await apiClient.post<Snippet>(`${API_ENDPOINTS.SNIPPETS}/${snippetId}/versions/${versionId}/rollback`, {});
+    window.dispatchEvent(createCustomEvent(EVENTS.SNIPPET_UPDATED));
+    return result;
+  } catch (error) {
+    console.error("Error rolling back to version:", error);
     throw error;
   }
 };

@@ -32,5 +32,39 @@
         }
       }
     }
+  },
+  "versionHistory": {
+    "title": "Version History",
+    "version": "v{{number}}",
+    "current": "Current",
+    "noVersions": "No versions yet",
+    "selectedForCompare": "{{count}} versions selected",
+    "compare": "Compare",
+    "view": "View",
+    "rollback": "Restore",
+    "files": "{{count}} file",
+    "files_plural": "{{count}} files",
+    "selectHint": "Click to select up to 2 versions for comparison"
+  },
+  "versionDiff": {
+    "title": "Version Comparison",
+    "oldVersion": "Old Version",
+    "newVersion": "New Version",
+    "oldLine": "Old",
+    "newLine": "New",
+    "content": "Content",
+    "files": "{{count}} files changed",
+    "modified": "Modified",
+    "noChanges": "No changes",
+    "removed": "Removed",
+    "added": "Added"
+  },
+  "versionView": {
+    "title": "Viewing Version",
+    "rollback": "Restore This Version",
+    "rollbackConfirm": "Are you sure you want to restore this version? This will create a new version with the content from this version.",
+    "rollbackSuccess": "Version restored successfully",
+    "rollbackError": "Failed to restore version",
+    "subTitle": "v{{versionNumber}} - {{title}}"
   }
 }

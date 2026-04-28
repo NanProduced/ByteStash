@@ -1,5 +1,6 @@
 import Logger from "../logger.js";
 import snippetRepository from "../repositories/snippetRepository.js";
+import snippetVersionRepository from "../repositories/snippetVersionRepository.js";
 
 class SnippetService {
   async getAllSnippets(userId) {
@@ -35,6 +36,19 @@ class SnippetService {
         isPublic: snippetData.is_public || 0,
       });
       Logger.debug("Service: Created snippet with ID:", result.id);
+
+      const nextVersion = snippetVersionRepository.getNextVersionNumber(result.id);
+      await snippetVersionRepository.createVersion({
+        snippetId: result.id,
+        versionNumber: nextVersion,
+        title: result.title,
+        description: result.description,
+        categories: result.categories,
+        fragments: result.fragments,
+        userId: userId,
+      });
+      Logger.debug("Service: Created initial version for snippet:", result.id);
+
       return result;
     } catch (error) {
       Logger.error("Service Error - createSnippet:", error);
@@ -134,6 +148,21 @@ class SnippetService {
         "Service: Update operation result:",
         result ? "Success" : "Not Found"
       );
+
+      if (result) {
+        const nextVersion = snippetVersionRepository.getNextVersionNumber(id);
+        await snippetVersionRepository.createVersion({
+          snippetId: id,
+          versionNumber: nextVersion,
+          title: result.title,
+          description: result.description,
+          categories: result.categories,
+          fragments: result.fragments,
+          userId: userId,
+        });
+        Logger.debug("Service: Created version", nextVersion, "for snippet:", id);
+      }
+
       return result;
     } catch (error) {
       Logger.error("Service Error - updateSnippet:", error);
@@ -248,6 +277,76 @@ class SnippetService {
       return result;
     } catch (error) {
       Logger.error("Service Error - getMetadata:", error);
+      throw error;
+    }
+  }
+
+  async getVersions(snippetId, userId) {
+    try {
+      Logger.debug("Service: Getting versions for snippet:", snippetId, "for user:", userId);
+      const snippet = await snippetRepository.findById(snippetId, userId);
+      if (!snippet) {
+        Logger.debug("Service: Snippet not found or access denied");
+        return null;
+      }
+      const versions = await snippetVersionRepository.findBySnippetId(snippetId);
+      Logger.debug(`Service: Retrieved ${versions.length} versions`);
+      return versions;
+    } catch (error) {
+      Logger.error("Service Error - getVersions:", error);
+      throw error;
+    }
+  }
+
+  async getVersionById(snippetId, versionId, userId) {
+    try {
+      Logger.debug("Service: Getting version:", versionId, "for snippet:", snippetId, "for user:", userId);
+      const snippet = await snippetRepository.findById(snippetId, userId);
+      if (!snippet) {
+        Logger.debug("Service: Snippet not found or access denied");
+        return null;
+      }
+      const version = await snippetVersionRepository.findByIdAndSnippetId(versionId, snippetId);
+      Logger.debug("Service: Get version result:", version ? "Found" : "Not Found");
+      return version;
+    } catch (error) {
+      Logger.error("Service Error - getVersionById:", error);
+      throw error;
+    }
+  }
+
+  async rollbackToVersion(snippetId, versionId, userId) {
+    try {
+      Logger.debug("Service: Rolling back snippet:", snippetId, "to version:", versionId, "for user:", userId);
+      
+      const snippet = await snippetRepository.findById(snippetId, userId);
+      if (!snippet) {
+        Logger.debug("Service: Snippet not found or access denied");
+        return null;
+      }
+
+      const version = await snippetVersionRepository.findByIdAndSnippetId(versionId, snippetId);
+      if (!version) {
+        Logger.debug("Service: Version not found");
+        return null;
+      }
+
+      const result = await snippetRepository.update(
+        snippetId,
+        {
+          title: version.title,
+          description: version.description || "",
+          categories: version.categories,
+          fragments: version.fragments,
+          isPublic: snippet.is_public,
+        },
+        userId
+      );
+
+      Logger.debug("Service: Rollback operation result:", result ? "Success" : "Not Found");
+      return result;
+    } catch (error) {
+      Logger.error("Service Error - rollbackToVersion:", error);
       throw error;
     }
   }
