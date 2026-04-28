@@ -96,9 +96,10 @@ const CategorySuggestions: React.FC<CategorySuggestionsProps> = ({
   };
 
   const handleSelect = (option: string) => {
+    const prefix = `${addNewLabel}: `;
     let newCategory;
-    if (option.startsWith(`${addNewLabel}:`)) {
-      newCategory = option.slice(9).trim();
+    if (option.startsWith(prefix)) {
+      newCategory = option.slice(prefix.length).trim();
     } else {
       newCategory = option;
     }

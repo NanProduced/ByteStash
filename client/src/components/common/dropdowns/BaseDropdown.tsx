@@ -117,8 +117,9 @@ const BaseDropdown = forwardRef<BaseDropdownRef, BaseDropdownProps>(({
   const addNewLabel = translate('baseDropdown.addNewLabel');
 
   const handleOptionClick = (option: string) => {
-    const finalValue = option.startsWith(`${addNewLabel}:`)
-      ? option.slice(9).trim()
+    const prefix = `${addNewLabel}: `;
+    const finalValue = option.startsWith(prefix)
+      ? option.slice(prefix.length).trim()
       : option;
     setInternalValue(finalValue);
     onSelect(finalValue);
