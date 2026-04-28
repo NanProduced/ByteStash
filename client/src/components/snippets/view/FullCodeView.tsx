@@ -21,6 +21,7 @@ import { getSnippetVersions, getSnippetVersionById, rollbackToVersion } from "..
 import { useToast } from "../../../hooks/useToast";
 import { ConfirmationModal } from "../../common/modals/ConfirmationModal";
 import { useAuth } from "../../../hooks/useAuth";
+import { EVENTS } from "../../../constants/events";
 
 interface FullCodeViewProps {
   showTitle?: boolean;
@@ -64,16 +65,6 @@ export const FullCodeView: React.FC<FullCodeViewProps> = ({
   const [isRollbackConfirmOpen, setIsRollbackConfirmOpen] = useState(false);
   const [versionToRollback, setVersionToRollback] = useState<SnippetVersion | null>(null);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
-        setIsFilterOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
   const loadVersions = useCallback(async () => {
     if (!isAuthenticated || isPublicView) return;
     
@@ -88,6 +79,26 @@ export const FullCodeView: React.FC<FullCodeViewProps> = ({
       setIsLoadingVersions(false);
     }
   }, [snippet.id, isAuthenticated, isPublicView]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
+        setIsFilterOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const handleSnippetUpdated = () => {
+      if (isVersionHistoryOpen) {
+        loadVersions();
+      }
+    };
+    window.addEventListener(EVENTS.SNIPPET_UPDATED, handleSnippetUpdated);
+    return () => window.removeEventListener(EVENTS.SNIPPET_UPDATED, handleSnippetUpdated);
+  }, [isVersionHistoryOpen, loadVersions]);
 
   const handleOpenVersionHistory = useCallback(() => {
     loadVersions();
