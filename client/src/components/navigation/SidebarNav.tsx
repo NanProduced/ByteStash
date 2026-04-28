@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   ChevronRight,
   ChevronDown,
@@ -35,7 +35,8 @@ export interface SidebarNavProps {
   snippets: Snippet[];
   isOpen: boolean;
   onToggle: () => void;
-  onTagDrop?: (snippetId: string, tag: string) => void;
+  isDragging?: boolean;
+  onDrop?: (e: React.DragEvent, tag: string) => void;
 }
 
 type ViewType = "all" | "favorites" | "recent";
@@ -51,7 +52,8 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
   snippets,
   isOpen,
   onToggle,
-  onTagDrop,
+  isDragging = false,
+  onDrop,
 }) => {
   const { t: translate } = useTranslation('components/snippets/view/all');
   const [searchParams, setSearchParams] = useSearchParams();
@@ -60,10 +62,6 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
     languages: localStorage.getItem(STORAGE_KEYS.COLLAPSED_LANGUAGES) === "true",
     tags: localStorage.getItem(STORAGE_KEYS.COLLAPSED_TAGS) === "true",
   });
-
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragOverTag, setDragOverTag] = useState<string | null>(null);
-  const dragOverTagRef = useRef<string | null>(null);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.COLLAPSED_MY, String(collapsedSections.my));
@@ -182,46 +180,30 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
     [setSearchParams]
   );
 
-  const handleDragStart = useCallback(() => {
-    setIsDragging(true);
-    dragOverTagRef.current = null;
-    setDragOverTag(null);
-  }, []);
-
-  const handleDragEnd = useCallback(() => {
-    setIsDragging(false);
-    dragOverTagRef.current = null;
-    setDragOverTag(null);
-  }, []);
-
-  const handleDragOver = useCallback((e: React.DragEvent, tag: string) => {
+  const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
-    if (dragOverTagRef.current !== tag) {
-      dragOverTagRef.current = tag;
-      setDragOverTag(tag);
-    }
   }, []);
 
-  const handleDragLeave = useCallback((tag: string) => {
-    if (dragOverTagRef.current === tag) {
-      dragOverTagRef.current = null;
-      setDragOverTag(null);
-    }
-  }, []);
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent, tag: string) => {
+  const handleTagDrop = useCallback(
+    (e: React.DragEvent) => {
       e.preventDefault();
-      const snippetId = e.dataTransfer.getData("text/plain");
-      if (snippetId && onTagDrop) {
-        onTagDrop(snippetId, tag);
+      e.stopPropagation();
+      
+      const target = e.target as HTMLElement;
+      const tagElement = target.closest('[data-tag]');
+      
+      if (tagElement) {
+        const tag = tagElement.getAttribute('data-tag');
+        if (tag) {
+          const snippetId = e.dataTransfer.getData("text/plain");
+          if (snippetId && onDrop) {
+            onDrop(e, tag);
+          }
+        }
       }
-      setIsDragging(false);
-      dragOverTagRef.current = null;
-      setDragOverTag(null);
     },
-    [onTagDrop]
+    [onDrop]
   );
 
   const clearAllFilters = useCallback(() => {
@@ -273,41 +255,26 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
     count?: number;
     active: boolean;
     onClick: () => void;
-    onDragStart?: (e: React.DragEvent) => void;
-    onDragEnd?: () => void;
-    onDragOver?: (e: React.DragEvent) => void;
-    onDragLeave?: () => void;
-    onDrop?: (e: React.DragEvent) => void;
-    draggable?: boolean;
-    isDragOver?: boolean;
+    dataTag?: string;
+    isDropTarget?: boolean;
   }> = ({
     icon,
     label,
     count,
     active,
     onClick,
-    onDragStart,
-    onDragEnd,
-    onDragOver,
-    onDragLeave,
-    onDrop,
-    draggable,
-    isDragOver,
+    dataTag,
+    isDropTarget,
   }) => (
     <button
       onClick={onClick}
-      draggable={draggable}
-      onDragStart={onDragStart}
-      onDragEnd={onDragEnd}
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
-      onDrop={onDrop}
+      data-tag={dataTag}
       className={`flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors rounded ${
         active
           ? "bg-light-primary/15 dark:bg-dark-primary/15 text-light-primary dark:text-dark-primary font-medium"
           : "text-light-text dark:text-dark-text hover:bg-light-hover/50 dark:hover:bg-dark-hover/50"
       } ${
-        isDragOver
+        isDropTarget
           ? "bg-light-primary/20 dark:bg-dark-primary/20 border-2 border-dashed border-light-primary dark:border-dark-primary"
           : ""
       }`}
@@ -325,8 +292,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
   return (
     <div 
       className="w-64 shrink-0 bg-light-surface dark:bg-dark-surface border-r border-light-border dark:border-dark-border flex flex-col h-full overflow-hidden"
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
+      onDragOver={handleDragOver}
     >
       <div className="flex items-center justify-between px-3 py-2 border-b border-light-border dark:border-dark-border">
         <h2 className="text-sm font-semibold text-light-text dark:text-dark-text">
@@ -427,7 +393,10 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
             collapsed={collapsedSections.tags}
           />
           {!collapsedSections.tags && tagCounts.length > 0 && (
-            <div className="mt-1">
+            <div 
+              className="mt-1"
+              onDrop={handleTagDrop}
+            >
               {tagCounts.map(({ tag, count }) => (
                 <NavItem
                   key={tag}
@@ -436,10 +405,8 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
                   count={count}
                   active={currentCategories.includes(tag)}
                   onClick={() => toggleCategoryFilter(tag)}
-                  onDragOver={(e) => handleDragOver(e, tag)}
-                  onDragLeave={() => handleDragLeave(tag)}
-                  onDrop={(e) => handleDrop(e, tag)}
-                  isDragOver={dragOverTag === tag}
+                  dataTag={tag}
+                  isDropTarget={isDragging}
                 />
               ))}
             </div>

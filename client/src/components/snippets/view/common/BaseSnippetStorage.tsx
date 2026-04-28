@@ -63,6 +63,8 @@ const BaseSnippetStorage: React.FC = () => {
   const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
   const [snippetToShare, setSnippetToShare] = useState<Snippet | null>(null);
 
+  const [isDragging, setIsDragging] = useState(false);
+
   const mountedRef = useRef(false);
 
   const createSnippetMutation = useCreateSnippet();
@@ -105,6 +107,16 @@ const BaseSnippetStorage: React.FC = () => {
     fetchMetadata();
   }, []);
 
+  const handleDragStart = useCallback((e: React.DragEvent, snippetId: string) => {
+    setIsDragging(true);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", snippetId);
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
   const handleTagDrop = useCallback(async (snippetId: string, tag: string) => {
     try {
       const snippet = await getSnippetById(snippetId);
@@ -120,19 +132,15 @@ const BaseSnippetStorage: React.FC = () => {
       }
 
       const updatedCategories = [...snippet.categories, tag];
-      const updatedSnippet = {
-        ...snippet,
-        categories: updatedCategories,
-      };
 
       const result = await editSnippet(snippetId, {
-        title: updatedSnippet.title,
-        description: updatedSnippet.description,
+        title: snippet.title,
+        description: snippet.description,
         categories: updatedCategories,
-        fragments: updatedSnippet.fragments,
-        is_public: updatedSnippet.is_public,
-        is_pinned: updatedSnippet.is_pinned,
-        is_favorite: updatedSnippet.is_favorite,
+        fragments: snippet.fragments,
+        is_public: snippet.is_public,
+        is_pinned: snippet.is_pinned,
+        is_favorite: snippet.is_favorite,
       });
 
       if (result) {
@@ -146,8 +154,21 @@ const BaseSnippetStorage: React.FC = () => {
       } else {
         addToast(translate('baseSnippetStorage.error.tagAddFailed'), "error");
       }
+    } finally {
+      setIsDragging(false);
     }
   }, [addToast, logout]);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent, tag: string) => {
+      e.preventDefault();
+      const snippetId = e.dataTransfer.getData("text/plain");
+      if (snippetId) {
+        handleTagDrop(snippetId, tag);
+      }
+    },
+    [handleTagDrop]
+  );
 
   const handleSearchChange = useCallback((search: string) => {
     setSearchParams((prev) => {
@@ -273,7 +294,8 @@ const BaseSnippetStorage: React.FC = () => {
           snippets={allSnippets}
           isOpen={sidebarOpen}
           onToggle={() => setSidebarOpen(!sidebarOpen)}
-          onTagDrop={handleTagDrop}
+          isDragging={isDragging}
+          onDrop={handleDrop}
         />
         
         <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${sidebarOpen ? "" : "ml-0"}`}>
@@ -315,6 +337,8 @@ const BaseSnippetStorage: React.FC = () => {
               onSnippetSelect={() => {}}
               onEdit={openEditSnippetModal}
               onShare={openShareMenu}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
             />
           </div>
         </div>

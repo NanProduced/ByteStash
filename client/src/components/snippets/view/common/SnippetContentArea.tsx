@@ -33,6 +33,8 @@ interface SnippetContentAreaProps {
   onSnippetSelect: (snippet: Snippet | null) => void;
   onEdit: (snippet: Snippet) => void;
   onShare: (snippet: Snippet) => void;
+  onDragStart?: (e: React.DragEvent, snippetId: string) => void;
+  onDragEnd?: () => void;
 }
 
 const SnippetContentArea: React.FC<SnippetContentAreaProps> = ({
@@ -50,6 +52,8 @@ const SnippetContentArea: React.FC<SnippetContentAreaProps> = ({
   onSnippetSelect,
   onEdit,
   onShare,
+  onDragStart,
+  onDragEnd,
 }) => {
   const { t: translate } = useTranslation('components/snippets/view/common');
   const [searchParams] = useSearchParams();
@@ -281,6 +285,8 @@ const SnippetContentArea: React.FC<SnippetContentAreaProps> = ({
         isAuthenticated={isAuthenticated}
         pinSnippet={pinSnippet}
         favoriteSnippet={favoriteSnippet}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
       />
 
       {hasNextPage && (
