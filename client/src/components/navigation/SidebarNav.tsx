@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   ChevronRight,
   ChevronDown,
@@ -61,8 +61,9 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
     tags: localStorage.getItem(STORAGE_KEYS.COLLAPSED_TAGS) === "true",
   });
 
-  const [draggedSnippet, setDraggedSnippet] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const [dragOverTag, setDragOverTag] = useState<string | null>(null);
+  const dragOverTagRef = useRef<string | null>(null);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.COLLAPSED_MY, String(collapsedSections.my));
@@ -70,7 +71,6 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
     localStorage.setItem(STORAGE_KEYS.COLLAPSED_TAGS, String(collapsedSections.tags));
   }, [collapsedSections]);
 
-  // Keep metadata for compatibility (not currently used, but passed from parent)
   void metadata;
 
   const currentView = useMemo((): ViewType => {
@@ -182,14 +182,32 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
     [setSearchParams]
   );
 
+  const handleDragStart = useCallback(() => {
+    setIsDragging(true);
+    dragOverTagRef.current = null;
+    setDragOverTag(null);
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    setIsDragging(false);
+    dragOverTagRef.current = null;
+    setDragOverTag(null);
+  }, []);
+
   const handleDragOver = useCallback((e: React.DragEvent, tag: string) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
-    setDragOverTag(tag);
+    if (dragOverTagRef.current !== tag) {
+      dragOverTagRef.current = tag;
+      setDragOverTag(tag);
+    }
   }, []);
 
-  const handleDragLeave = useCallback(() => {
-    setDragOverTag(null);
+  const handleDragLeave = useCallback((tag: string) => {
+    if (dragOverTagRef.current === tag) {
+      dragOverTagRef.current = null;
+      setDragOverTag(null);
+    }
   }, []);
 
   const handleDrop = useCallback(
@@ -199,7 +217,8 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       if (snippetId && onTagDrop) {
         onTagDrop(snippetId, tag);
       }
-      setDraggedSnippet(null);
+      setIsDragging(false);
+      dragOverTagRef.current = null;
       setDragOverTag(null);
     },
     [onTagDrop]
@@ -304,7 +323,11 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
   );
 
   return (
-    <div className="w-64 shrink-0 bg-light-surface dark:bg-dark-surface border-r border-light-border dark:border-dark-border flex flex-col h-full overflow-hidden">
+    <div 
+      className="w-64 shrink-0 bg-light-surface dark:bg-dark-surface border-r border-light-border dark:border-dark-border flex flex-col h-full overflow-hidden"
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
       <div className="flex items-center justify-between px-3 py-2 border-b border-light-border dark:border-dark-border">
         <h2 className="text-sm font-semibold text-light-text dark:text-dark-text">
           {translate('sidebar.title')}
@@ -414,7 +437,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
                   active={currentCategories.includes(tag)}
                   onClick={() => toggleCategoryFilter(tag)}
                   onDragOver={(e) => handleDragOver(e, tag)}
-                  onDragLeave={handleDragLeave}
+                  onDragLeave={() => handleDragLeave(tag)}
                   onDrop={(e) => handleDrop(e, tag)}
                   isDragOver={dragOverTag === tag}
                 />
@@ -429,7 +452,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
         </div>
       </div>
 
-      {draggedSnippet && (
+      {isDragging && (
         <div className="px-3 py-2 border-t border-light-border dark:border-dark-border bg-light-hover/50 dark:bg-dark-hover/50">
           <div className="flex items-center gap-2 text-xs text-light-text-secondary dark:text-dark-text-secondary">
             <MoreHorizontal size={14} className="animate-pulse" />

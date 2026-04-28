@@ -16,13 +16,13 @@ import { ShareMenu } from "../../share/ShareMenu";
 import SnippetContentArea from "./SnippetContentArea";
 import StorageHeader from "./StorageHeader";
 import SidebarNav from "../../../navigation/SidebarNav";
-import { editSnippet } from "../../../../utils/api/snippets";
+import { getSnippetById, editSnippet } from "../../../../utils/api/snippets";
 
 const SIDEBAR_OPEN_KEY = "sidebar_open";
 
 const BaseSnippetStorage: React.FC = () => {
   const { t: translate } = useTranslation('components/snippets/view/common');
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [, setSearchParams] = useSearchParams();
   const { addToast } = useToast();
   const { isAuthenticated, logout } = useAuth();
   const {
@@ -51,14 +51,12 @@ const BaseSnippetStorage: React.FC = () => {
     localStorage.setItem(SIDEBAR_OPEN_KEY, String(sidebarOpen));
   }, [sidebarOpen]);
 
-  // Metadata - loaded once, never changes
   const [metadata, setMetadata] = useState<{ categories: string[]; languages: string[]; counts: { total: number } }>({
     categories: [],
     languages: [],
     counts: { total: 0 }
   });
 
-  // UI state
   const [isEditSnippetModalOpen, setIsEditSnippetModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [snippetToEdit, setSnippetToEdit] = useState<Snippet | null>(null);
@@ -67,28 +65,25 @@ const BaseSnippetStorage: React.FC = () => {
 
   const mountedRef = useRef(false);
 
-  // React Query mutations
   const createSnippetMutation = useCreateSnippet();
   const editSnippetMutation = useEditSnippet();
 
-  const queryFilters: SnippetsQueryKey = useMemo(() => ({
-    search: searchParams.get("search") || undefined,
-    searchCode: includeCodeInSearch,
-    language: searchParams.get("language") || undefined,
-    category: searchParams.get("categories") || undefined,
-    favorites: searchParams.get("favorites") === "true",
+  const unfilteredQueryFilters: SnippetsQueryKey = useMemo(() => ({
+    search: undefined,
+    searchCode: false,
+    language: undefined,
+    category: undefined,
+    favorites: false,
     recycled: false,
-    sort: searchParams.get("sort") || "newest",
+    sort: "newest",
     viewType: "base",
-  }), [searchParams, includeCodeInSearch]);
+  }), []);
 
-  const {
-    data,
-  } = useSnippetsInfiniteQuery(queryFilters);
+  const { data: unfilteredData } = useSnippetsInfiniteQuery(unfilteredQueryFilters);
 
   const allSnippets = useMemo(() => {
-    return data?.pages.flatMap(page => page.data) ?? [];
-  }, [data]);
+    return unfilteredData?.pages.flatMap(page => page.data) ?? [];
+  }, [unfilteredData]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -98,7 +93,6 @@ const BaseSnippetStorage: React.FC = () => {
     };
   }, []);
 
-  // Load metadata once
   useEffect(() => {
     const fetchMetadata = async () => {
       try {
@@ -111,11 +105,13 @@ const BaseSnippetStorage: React.FC = () => {
     fetchMetadata();
   }, []);
 
-  // Handle tag drop - add tag to snippet
   const handleTagDrop = useCallback(async (snippetId: string, tag: string) => {
     try {
-      const snippet = allSnippets.find(s => s.id === snippetId);
-      if (!snippet) return;
+      const snippet = await getSnippetById(snippetId);
+      if (!snippet) {
+        addToast(translate('baseSnippetStorage.error.tagAddFailed'), "error");
+        return;
+      }
 
       const hasTag = snippet.categories.includes(tag);
       if (hasTag) {
@@ -151,9 +147,8 @@ const BaseSnippetStorage: React.FC = () => {
         addToast(translate('baseSnippetStorage.error.tagAddFailed'), "error");
       }
     }
-  }, [allSnippets, addToast, logout]);
+  }, [addToast, logout]);
 
-  // Stable callbacks that only update URL - these NEVER change
   const handleSearchChange = useCallback((search: string) => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
@@ -216,7 +211,6 @@ const BaseSnippetStorage: React.FC = () => {
     });
   }, [setShowFavorites, addToast]);
 
-  // Modal handlers
   const openEditSnippetModal = useCallback((snippet: Snippet | null = null) => {
     setSnippetToEdit(snippet);
     setIsEditSnippetModalOpen(true);
