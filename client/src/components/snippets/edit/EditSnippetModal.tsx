@@ -2,10 +2,10 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import "prismjs";
 import "prismjs/components/prism-markup-templating.js";
 import "prismjs/themes/prism.css";
-import { Plus, Search, PanelLeftClose, PanelLeftOpen, ListFilter, Check } from "lucide-react";
+import { Plus, Search, PanelLeftClose, PanelLeftOpen, ListFilter, Check, Code, FileText, Link2, ChevronDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Switch } from "../../../components/common/switch/Switch";
-import { Fragment, Snippet } from "../../../types/snippets";
+import { Fragment, Snippet, FragmentKind } from "../../../types/snippets";
 import { detectLanguageFromFileName, getFileIcon, getFullFileName } from "../../../utils/language/languageUtils";
 import CategoryList from "../../categories/CategoryList";
 import CategorySuggestions from "../../categories/CategorySuggestions";
@@ -48,7 +48,9 @@ const EditSnippetModal: React.FC<EditSnippetModalProps> = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [hiddenExtensions, setHiddenExtensions] = useState<Set<string>>(new Set());
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isAddFragmentMenuOpen, setIsAddFragmentMenuOpen] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
+  const addFragmentMenuRef = useRef<HTMLDivElement>(null);
   const [editingFileIndex, setEditingFileIndex] = useState<number | null>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
 
@@ -56,6 +58,9 @@ const EditSnippetModal: React.FC<EditSnippetModalProps> = ({
     const handleClickOutside = (event: MouseEvent) => {
       if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
         setIsFilterOpen(false);
+      }
+      if (addFragmentMenuRef.current && !addFragmentMenuRef.current.contains(event.target as Node)) {
+        setIsAddFragmentMenuOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -203,23 +208,45 @@ const EditSnippetModal: React.FC<EditSnippetModalProps> = ({
     setHasUnsavedChanges(true);
   };
 
-  const handleAddFragment = () => {
+  const handleAddFragment = (kind: FragmentKind = "code") => {
     setFragments((current) => {
-      const newFragments = [
-        ...current,
-        {
+      let newFragment: Fragment;
+      
+      if (kind === "embed") {
+        newFragment = {
+          file_name: "embed",
+          kind: "embed",
+          target_snippet_id: "",
+          position: current.length,
+        } as Fragment;
+      } else if (kind === "markdown") {
+        newFragment = {
+          file_name: `file${current.length + 1}.md`,
+          code: "",
+          language: "markdown",
+          kind: "markdown",
+          position: current.length,
+        } as Fragment;
+      } else {
+        newFragment = {
           file_name: `file${current.length + 1}`,
           code: "",
           language: "",
+          kind: "code",
           position: current.length,
-          kind: "code" as const,
-        },
+        } as Fragment;
+      }
+
+      const newFragments = [
+        ...current,
+        newFragment,
       ];
       setActiveFragmentIndex(newFragments.length - 1);
-      setEditingFileIndex(newFragments.length - 1); // Edit inline directly
+      setEditingFileIndex(newFragments.length - 1);
       return newFragments;
     });
     setHasUnsavedChanges(true);
+    setIsAddFragmentMenuOpen(false);
   };
 
   const handleFileUpload = (fileData: {
@@ -304,8 +331,14 @@ const EditSnippetModal: React.FC<EditSnippetModalProps> = ({
       await onSubmit(snippetData);
       setHasUnsavedChanges(false);
       onClose();
-    } catch (error) {
-      setError(translate('editSnippetModal.error.savingFailed'));
+    } catch (error: any) {
+      if (error?.code === "EMBED_VALIDATION_ERROR" || error?.code === "embed_validation_error") {
+        setError(error.details || error.message || translate('editSnippetModal.error.savingFailed'));
+      } else if (error?.message) {
+        setError(error.message);
+      } else {
+        setError(translate('editSnippetModal.error.savingFailed'));
+      }
       console.error("Error saving snippet:", error);
     } finally {
       setIsSubmitting(false);
@@ -624,14 +657,44 @@ const EditSnippetModal: React.FC<EditSnippetModalProps> = ({
                           </div>
                         )}
                       </div>
-                      <div className="p-2 border-t border-light-border dark:border-dark-border bg-light-surface dark:bg-dark-surface">
+                      <div className="p-2 border-t border-light-border dark:border-dark-border bg-light-surface dark:bg-dark-surface" ref={addFragmentMenuRef}>
                         <button 
                           type="button" 
-                          onClick={handleAddFragment} 
+                          onClick={() => setIsAddFragmentMenuOpen(!isAddFragmentMenuOpen)}
                           className="w-full flex items-center justify-center gap-1 p-1.5 text-xs font-semibold rounded bg-light-primary/10 dark:bg-dark-primary/10 text-light-primary dark:text-dark-primary hover:bg-light-primary/20 dark:hover:bg-dark-primary/20 transition-colors"
                         >
                           <Plus size={14}/> {translate('editSnippetModal.form.codeFragments.add')}
+                          <ChevronDown size={12} className={`transition-transform ${isAddFragmentMenuOpen ? 'rotate-180' : ''}`} />
                         </button>
+                        
+                        {isAddFragmentMenuOpen && (
+                          <div className="absolute bottom-full left-2 right-2 mb-1 w-auto bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border rounded-lg shadow-xl z-50 py-1 flex flex-col">
+                            <button
+                              type="button"
+                              onClick={() => handleAddFragment("code")}
+                              className="w-full px-3 py-2 flex items-center gap-2 text-sm text-light-text dark:text-dark-text hover:bg-light-hover dark:hover:bg-dark-hover transition-colors"
+                            >
+                              <Code size={14} className="text-light-text-secondary dark:text-dark-text-secondary" />
+                              <span>Code</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleAddFragment("markdown")}
+                              className="w-full px-3 py-2 flex items-center gap-2 text-sm text-light-text dark:text-dark-text hover:bg-light-hover dark:hover:bg-dark-hover transition-colors"
+                            >
+                              <FileText size={14} className="text-light-text-secondary dark:text-dark-text-secondary" />
+                              <span>Markdown</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleAddFragment("embed")}
+                              className="w-full px-3 py-2 flex items-center gap-2 text-sm text-light-text dark:text-dark-text hover:bg-light-hover dark:hover:bg-dark-hover transition-colors"
+                            >
+                              <Link2 size={14} className="text-light-text-secondary dark:text-dark-text-secondary" />
+                              <span>Embed Snippet</span>
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}

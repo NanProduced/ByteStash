@@ -36,6 +36,7 @@ export const EmbedFragmentView: React.FC<EmbedFragmentViewProps> = ({
   const [targetFragment, setTargetFragment] = useState<Fragment | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [errorType, setErrorType] = useState<'not_found' | 'forbidden' | 'other' | null>(null);
 
   const targetSnippetId = fragment.target_snippet_id;
   const targetFragmentId = fragment.target_fragment_id;
@@ -56,6 +57,7 @@ export const EmbedFragmentView: React.FC<EmbedFragmentViewProps> = ({
     const fetchTarget = async () => {
       setLoading(true);
       setError(null);
+      setErrorType(null);
 
       try {
         let snippet: Snippet;
@@ -76,11 +78,22 @@ export const EmbedFragmentView: React.FC<EmbedFragmentViewProps> = ({
             setTargetFragment(foundFragment);
           } else {
             setError(translate('embedFragmentView.error.targetFragmentNotFound') || 'Target fragment not found');
+            setErrorType('not_found');
           }
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error fetching embedded snippet:', err);
-        setError(translate('embedFragmentView.error.failedToLoad') || 'Failed to load embedded content');
+        
+        if (err?.status === 404) {
+          setError(translate('embedFragmentView.error.targetNotFound') || 'Target snippet not found');
+          setErrorType('not_found');
+        } else if (err?.status === 403 || err?.status === 401) {
+          setError(translate('embedFragmentView.error.accessDenied') || 'You do not have permission to view this snippet');
+          setErrorType('forbidden');
+        } else {
+          setError(err?.message || translate('embedFragmentView.error.failedToLoad') || 'Failed to load embedded content');
+          setErrorType('other');
+        }
       } finally {
         setLoading(false);
       }
@@ -147,7 +160,7 @@ export const EmbedFragmentView: React.FC<EmbedFragmentViewProps> = ({
           {translate('embedFragmentView.error.title') || 'Embedded Content Error'}
         </p>
         <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
-        {targetSnippetId && (
+        {targetSnippetId && !isPublicView && errorType !== 'forbidden' && (
           <button
             onClick={handleNavigateToSource}
             className="mt-3 flex items-center gap-1 text-xs text-light-primary dark:text-dark-primary hover:underline"
@@ -181,14 +194,16 @@ export const EmbedFragmentView: React.FC<EmbedFragmentViewProps> = ({
             </span>
           )}
         </div>
-        <button
-          onClick={handleNavigateToSource}
-          className="flex items-center gap-1 text-xs text-light-primary dark:text-dark-primary hover:underline"
-          title={translate('embedFragmentView.goToSource') || 'Go to source snippet'}
-        >
-          <ExternalLink size={12} />
-          {translate('embedFragmentView.source') || 'Source'}
-        </button>
+        {(!isPublicView || (targetSnippet && targetSnippet.is_public === 1)) && targetSnippetId && (
+          <button
+            onClick={handleNavigateToSource}
+            className="flex items-center gap-1 text-xs text-light-primary dark:text-dark-primary hover:underline"
+            title={translate('embedFragmentView.goToSource') || 'Go to source snippet'}
+          >
+            <ExternalLink size={12} />
+            {translate('embedFragmentView.source') || 'Source'}
+          </button>
+        )}
       </div>
 
       <div className="p-3 bg-light-surface dark:bg-dark-surface">
