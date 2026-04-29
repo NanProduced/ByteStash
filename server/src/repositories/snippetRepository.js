@@ -657,6 +657,197 @@ class SnippetRepository {
       throw error;
     }
   }
+
+  globalSearch({
+    userId = null,
+    query = '',
+    limit = 20,
+    includeRecent = false,
+    includeCategories = false,
+    includeLanguages = false
+  }) {
+    this.#initializeStatements();
+    const db = getDb();
+
+    try {
+      const result = {
+        snippets: [],
+        recentSnippets: [],
+        categories: [],
+        languages: []
+      };
+
+      if (includeRecent) {
+        let recentSql = `
+          SELECT
+            s.id,
+            s.title,
+            s.description,
+            datetime(s.updated_at) || 'Z' as updated_at,
+            s.user_id,
+            s.is_public,
+            s.is_pinned,
+            s.is_favorite,
+            u.username,
+            GROUP_CONCAT(DISTINCT c.name) as categories,
+            (SELECT COUNT(*) FROM shared_snippets WHERE snippet_id = s.id) as share_count
+          FROM snippets s
+          LEFT JOIN categories c ON s.id = c.snippet_id
+          LEFT JOIN users u ON s.user_id = u.id
+          WHERE 1=1
+        `;
+        const recentParams = [];
+
+        if (userId !== null) {
+          recentSql += ` AND s.user_id = ?`;
+          recentParams.push(userId);
+        } else {
+          recentSql += ` AND s.is_public = 1`;
+        }
+        recentSql += ` AND s.expiry_date IS NULL GROUP BY s.id ORDER BY s.updated_at DESC LIMIT 5`;
+
+        const recentRows = db.prepare(recentSql).all(...recentParams);
+        result.recentSnippets = recentRows.map(this.#processSnippet.bind(this));
+      }
+
+      if (query && query.trim().length > 0) {
+        const searchTerm = query.trim().toLowerCase();
+        const likePattern = `%${searchTerm}%`;
+
+        let snippetSql = `
+          SELECT DISTINCT
+            s.id,
+            s.title,
+            s.description,
+            datetime(s.updated_at) || 'Z' as updated_at,
+            s.user_id,
+            s.is_public,
+            s.is_pinned,
+            s.is_favorite,
+            u.username,
+            GROUP_CONCAT(DISTINCT c.name) as categories,
+            (SELECT COUNT(*) FROM shared_snippets WHERE snippet_id = s.id) as share_count
+          FROM snippets s
+          LEFT JOIN categories c ON s.id = c.snippet_id
+          LEFT JOIN users u ON s.user_id = u.id
+          LEFT JOIN fragments f ON s.id = f.snippet_id
+          WHERE 1=1
+        `;
+        const snippetParams = [];
+
+        if (userId !== null) {
+          snippetSql += ` AND s.user_id = ?`;
+          snippetParams.push(userId);
+        } else {
+          snippetSql += ` AND s.is_public = 1`;
+        }
+
+        snippetSql += ` AND s.expiry_date IS NULL AND (
+          LOWER(s.title) LIKE ? OR 
+          LOWER(s.description) LIKE ? OR 
+          LOWER(c.name) LIKE ? OR 
+          LOWER(f.language) LIKE ? OR 
+          LOWER(f.code) LIKE ?
+        ) GROUP BY s.id ORDER BY s.updated_at DESC LIMIT ?`;
+
+        snippetParams.push(likePattern, likePattern, likePattern, likePattern, likePattern, limit);
+
+        const snippetRows = db.prepare(snippetSql).all(...snippetParams);
+        result.snippets = snippetRows.map(this.#processSnippet.bind(this));
+
+        if (includeCategories) {
+          let categorySql = `
+            SELECT DISTINCT c.name
+            FROM categories c
+            INNER JOIN snippets s ON c.snippet_id = s.id
+            WHERE 1=1
+          `;
+          const categoryParams = [];
+
+          if (userId !== null) {
+            categorySql += ` AND s.user_id = ?`;
+            categoryParams.push(userId);
+          } else {
+            categorySql += ` AND s.is_public = 1`;
+          }
+
+          categorySql += ` AND s.expiry_date IS NULL AND LOWER(c.name) LIKE ? ORDER BY c.name LIMIT 10`;
+          categoryParams.push(likePattern);
+
+          result.categories = db.prepare(categorySql).all(...categoryParams).map(r => r.name);
+        }
+
+        if (includeLanguages) {
+          let languageSql = `
+            SELECT DISTINCT f.language
+            FROM fragments f
+            INNER JOIN snippets s ON f.snippet_id = s.id
+            WHERE 1=1
+          `;
+          const languageParams = [];
+
+          if (userId !== null) {
+            languageSql += ` AND s.user_id = ?`;
+            languageParams.push(userId);
+          } else {
+            languageSql += ` AND s.is_public = 1`;
+          }
+
+          languageSql += ` AND s.expiry_date IS NULL AND LOWER(f.language) LIKE ? ORDER BY f.language LIMIT 10`;
+          languageParams.push(likePattern);
+
+          result.languages = db.prepare(languageSql).all(...languageParams).map(r => r.language);
+        }
+      } else {
+        if (includeCategories) {
+          let categorySql = `
+            SELECT DISTINCT c.name
+            FROM categories c
+            INNER JOIN snippets s ON c.snippet_id = s.id
+            WHERE 1=1
+          `;
+          const categoryParams = [];
+
+          if (userId !== null) {
+            categorySql += ` AND s.user_id = ?`;
+            categoryParams.push(userId);
+          } else {
+            categorySql += ` AND s.is_public = 1`;
+          }
+
+          categorySql += ` AND s.expiry_date IS NULL ORDER BY c.name LIMIT 10`;
+
+          result.categories = db.prepare(categorySql).all(...categoryParams).map(r => r.name);
+        }
+
+        if (includeLanguages) {
+          let languageSql = `
+            SELECT DISTINCT f.language
+            FROM fragments f
+            INNER JOIN snippets s ON f.snippet_id = s.id
+            WHERE 1=1
+          `;
+          const languageParams = [];
+
+          if (userId !== null) {
+            languageSql += ` AND s.user_id = ?`;
+            languageParams.push(userId);
+          } else {
+            languageSql += ` AND s.is_public = 1`;
+          }
+
+          languageSql += ` AND s.expiry_date IS NULL ORDER BY f.language LIMIT 10`;
+
+          result.languages = db.prepare(languageSql).all(...languageParams).map(r => r.language);
+        }
+      }
+
+      return result;
+    } catch (error) {
+      Logger.error("Error in globalSearch:", error);
+      throw error;
+    }
+  }
 }
 
 export default new SnippetRepository();

@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Route, Routes, Navigate, useParams } from 'rea
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { SearchProvider } from './contexts/SearchContext';
 import { useAuth } from './hooks/useAuth';
 import { LoginPage } from './components/auth/LoginPage';
 import { RegisterPage } from './components/auth/RegisterPage';
@@ -46,7 +47,11 @@ const AuthenticatedApp: React.FC = () => {
     return <Navigate to={ROUTES.LOGIN} replace />;
   }
 
-  return <SnippetStorage />;
+  return (
+    <SearchProvider>
+      <SnippetStorage />
+    </SearchProvider>
+  );
 };
 
 const EmbedViewWrapper: React.FC = () => {

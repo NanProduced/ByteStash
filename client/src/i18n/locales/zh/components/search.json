@@ -26,5 +26,48 @@
   "view": {
     "grid": "网格视图",
     "list": "列表视图"
+  },
+  "commandPalette": {
+    "placeholder": "搜索代码片段、动作、分类...",
+    "noResults": "未找到结果",
+    "back": "返回",
+    "sections": {
+      "recent": "最近使用",
+      "snippets": "代码片段",
+      "actions": "动作",
+      "categories": "分类",
+      "languages": "语言"
+    },
+    "actions": {
+      "newSnippet": "新建代码片段",
+      "settings": "设置"
+    },
+    "snippetActions": {
+      "view": "查看代码片段",
+      "copy": "复制代码",
+      "edit": "编辑代码片段",
+      "makePublic": "设为公开",
+      "makePrivate": "设为私有",
+      "delete": "删除代码片段"
+    },
+    "hints": {
+      "navigate": "导航",
+      "execute": "执行",
+      "snippetMenu": "片段菜单",
+      "close": "关闭"
+    },
+    "toast": {
+      "copied": "代码片段已复制到剪贴板",
+      "copyFailed": "复制代码片段失败",
+      "madePublic": "代码片段已设为公开",
+      "madePrivate": "代码片段已设为私有",
+      "toggleFailed": "切换可见性失败",
+      "deleted": "代码片段已移至回收站",
+      "deleteFailed": "删除代码片段失败"
+    },
+    "confirmDelete": {
+      "title": "删除代码片段",
+      "message": "确定要将 \"{{title}}\" 移至回收站吗？"
+    }
   }
 }

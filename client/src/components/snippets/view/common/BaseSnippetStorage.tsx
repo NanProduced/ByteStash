@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useQueryClient } from "@tanstack/react-query";
 import { initializeMonaco } from "../../../../utils/language/languageUtils";
 import { useAuth } from "../../../../hooks/useAuth";
 import { useSettings } from "../../../../hooks/useSettings";
-import { useCreateSnippet, useEditSnippet } from "../../../../hooks/useSnippetsQuery";
+import { useCreateSnippet, useEditSnippet, snippetKeys } from "../../../../hooks/useSnippetsQuery";
 import { useToast } from "../../../../hooks/useToast";
+import { useSearch } from "../../../../contexts/SearchContext";
 import { SearchAndFilter } from "../../../search/SearchAndFilter";
 import { snippetService } from "../../../../service/snippetService";
+import { editSnippet, moveToRecycleBin } from "../../../../utils/api/snippets";
 import { Snippet } from "../../../../types/snippets";
 import SettingsModal from "../../../settings/SettingsModal";
 import { UserDropdown } from "../../../auth/UserDropdown";
@@ -15,12 +18,18 @@ import EditSnippetModal from "../../edit/EditSnippetModal";
 import { ShareMenu } from "../../share/ShareMenu";
 import SnippetContentArea from "./SnippetContentArea";
 import StorageHeader from "./StorageHeader";
+import { ConfirmationModal } from "../../../common/modals/ConfirmationModal";
+import { CommandPalette } from "../../../search/CommandPalette";
 
 const BaseSnippetStorage: React.FC = () => {
   const { t: translate } = useTranslation('components/snippets/view/common');
-  const [, setSearchParams] = useSearchParams();
+  const { t: searchTranslate } = useTranslation('components/search');
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { addToast } = useToast();
   const { isAuthenticated, logout } = useAuth();
+  const queryClient = useQueryClient();
+  const { isOpen, closeSearch } = useSearch();
   const {
     viewMode,
     setViewMode,
@@ -38,22 +47,22 @@ const BaseSnippetStorage: React.FC = () => {
     setShowFavorites,
   } = useSettings();
 
-  // Metadata - loaded once, never changes
   const [metadata, setMetadata] = useState<{ categories: string[]; languages: string[] }>({
     categories: [],
     languages: []
   });
 
-  // UI state
   const [isEditSnippetModalOpen, setIsEditSnippetModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [snippetToEdit, setSnippetToEdit] = useState<Snippet | null>(null);
   const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
   const [snippetToShare, setSnippetToShare] = useState<Snippet | null>(null);
 
+  const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(false);
+  const [snippetToDelete, setSnippetToDelete] = useState<Snippet | null>(null);
+
   const mountedRef = useRef(false);
 
-  // React Query mutations
   const createSnippetMutation = useCreateSnippet();
   const editSnippetMutation = useEditSnippet();
 
@@ -65,7 +74,6 @@ const BaseSnippetStorage: React.FC = () => {
     };
   }, []);
 
-  // Load metadata once
   useEffect(() => {
     const fetchMetadata = async () => {
       try {
@@ -78,7 +86,6 @@ const BaseSnippetStorage: React.FC = () => {
     fetchMetadata();
   }, []);
 
-  // Stable callbacks that only update URL - these NEVER change
   const handleSearchChange = useCallback((search: string) => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
@@ -141,7 +148,6 @@ const BaseSnippetStorage: React.FC = () => {
     });
   }, [setShowFavorites, addToast]);
 
-  // Modal handlers
   const openEditSnippetModal = useCallback((snippet: Snippet | null = null) => {
     setSnippetToEdit(snippet);
     setIsEditSnippetModalOpen(true);
@@ -195,6 +201,101 @@ const BaseSnippetStorage: React.FC = () => {
 
   const handleSettingsOpen = useCallback(() => setIsSettingsModalOpen(true), []);
   const handleNewSnippet = useCallback(() => openEditSnippetModal(null), [openEditSnippetModal]);
+
+  const handleOpenDeleteConfirmation = useCallback((snippet: Snippet) => {
+    setSnippetToDelete(snippet);
+    setIsDeleteConfirmationOpen(true);
+  }, []);
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!snippetToDelete) return;
+    
+    try {
+      await moveToRecycleBin(snippetToDelete.id);
+      queryClient.invalidateQueries({ queryKey: snippetKeys.lists() });
+      addToast(searchTranslate('commandPalette.toast.deleted'), "success");
+    } catch (error) {
+      console.error("Failed to delete snippet:", error);
+      addToast(searchTranslate('commandPalette.toast.deleteFailed'), "error");
+    } finally {
+      setIsDeleteConfirmationOpen(false);
+      setSnippetToDelete(null);
+    }
+  }, [snippetToDelete, queryClient, addToast, searchTranslate]);
+
+  const handleNavigateToSnippet = useCallback((snippetId: string) => {
+    closeSearch();
+    navigate(`/snippets/${snippetId}`);
+  }, [navigate, closeSearch]);
+
+  const handleNavigateToCategory = useCallback((category: string) => {
+    closeSearch();
+    const params = new URLSearchParams(searchParams);
+    const existingCategories = params.get('categories')?.split(',').filter(Boolean) || [];
+    if (!existingCategories.includes(category)) {
+      existingCategories.push(category);
+      params.set('categories', existingCategories.join(','));
+      setSearchParams(params);
+    }
+  }, [searchParams, setSearchParams, closeSearch]);
+
+  const handleNavigateToLanguage = useCallback((language: string) => {
+    closeSearch();
+    const params = new URLSearchParams(searchParams);
+    params.set('language', language);
+    setSearchParams(params);
+  }, [searchParams, setSearchParams, closeSearch]);
+
+  const handleCopySnippet = useCallback(async (snippet: Snippet) => {
+    try {
+      const allCode = snippet.fragments.map(f => f.code).join('\n\n');
+      await navigator.clipboard.writeText(allCode);
+      addToast(searchTranslate('commandPalette.toast.copied'), 'success');
+    } catch (error) {
+      console.error('Failed to copy snippet:', error);
+      addToast(searchTranslate('commandPalette.toast.copyFailed'), 'error');
+    }
+  }, [addToast, searchTranslate]);
+
+  const handleEditSnippet = useCallback((snippet: Snippet) => {
+    closeSearch();
+    setSnippetToEdit(snippet);
+    setIsEditSnippetModalOpen(true);
+  }, [closeSearch]);
+
+  const handleTogglePublic = useCallback(async (snippet: Snippet) => {
+    try {
+      const updated = await editSnippet(snippet.id, {
+        ...snippet,
+        is_public: snippet.is_public ? 0 : 1,
+      });
+      queryClient.setQueriesData({ queryKey: snippetKeys.lists() }, (oldData: any) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          pages: oldData.pages.map((page: any) => ({
+            ...page,
+            data: page.data.map((s: Snippet) => 
+              s.id === snippet.id ? updated : s
+            ),
+          })),
+        };
+      });
+      addToast(
+        snippet.is_public 
+          ? searchTranslate('commandPalette.toast.madePrivate') 
+          : searchTranslate('commandPalette.toast.madePublic'),
+        'success'
+      );
+    } catch (error) {
+      console.error('Failed to toggle public status:', error);
+      addToast(searchTranslate('commandPalette.toast.toggleFailed'), 'error');
+    }
+  }, [queryClient, addToast, searchTranslate]);
+
+  const handleDeleteSnippet = useCallback((snippet: Snippet) => {
+    handleOpenDeleteConfirmation(snippet);
+  }, [handleOpenDeleteConfirmation]);
 
   return (
     <>
@@ -273,6 +374,32 @@ const BaseSnippetStorage: React.FC = () => {
           onClose={closeShareMenu}
         />
       )}
+
+      <ConfirmationModal
+        isOpen={isDeleteConfirmationOpen}
+        onClose={() => {
+          setIsDeleteConfirmationOpen(false);
+          setSnippetToDelete(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        title={searchTranslate('commandPalette.confirmDelete.title')}
+        message={searchTranslate('commandPalette.confirmDelete.message', { title: snippetToDelete?.title || '' })}
+        variant="danger"
+      />
+
+      <CommandPalette
+        isOpen={isOpen}
+        onClose={closeSearch}
+        onNavigateToSnippet={handleNavigateToSnippet}
+        onNavigateToCategory={handleNavigateToCategory}
+        onNavigateToLanguage={handleNavigateToLanguage}
+        onOpenNewSnippet={handleNewSnippet}
+        onOpenSettings={handleSettingsOpen}
+        onCopySnippet={handleCopySnippet}
+        onEditSnippet={handleEditSnippet}
+        onTogglePublic={handleTogglePublic}
+        onDeleteSnippet={handleDeleteSnippet}
+      />
     </>
   );
 };
