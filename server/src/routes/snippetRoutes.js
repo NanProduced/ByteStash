@@ -36,6 +36,31 @@ function parseQueryParams(query) {
   };
 }
 
+// Global search endpoint - MUST come before /:id route
+router.get("/search", async (req, res) => {
+  try {
+    const query = req.query.q || req.query.query || "";
+    const limit = parseInt(req.query.limit) || 20;
+    const includeRecent = req.query.includeRecent === "true";
+    const includeCategories = req.query.includeCategories === "true";
+    const includeLanguages = req.query.includeLanguages === "true";
+
+    const result = await snippetService.globalSearch({
+      userId: req.user.id,
+      query,
+      limit,
+      includeRecent,
+      includeCategories,
+      includeLanguages
+    });
+
+    res.json(result);
+  } catch (error) {
+    Logger.error("Error in GET /snippets/search:", error);
+    res.status(500).json({ error: "Failed to search snippets" });
+  }
+});
+
 // GET all snippets (with pagination and filtering)
 router.get("/", async (req, res) => {
   try {
@@ -241,31 +266,6 @@ router.patch("/:id/favorite", async (req, res) => {
   } catch (error) {
     Logger.error("Error in PATCH /snippets/:id/favorite:", error);
     res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-// Global search endpoint
-router.get("/search", async (req, res) => {
-  try {
-    const query = req.query.q || req.query.query || "";
-    const limit = parseInt(req.query.limit) || 20;
-    const includeRecent = req.query.includeRecent === "true";
-    const includeCategories = req.query.includeCategories === "true";
-    const includeLanguages = req.query.includeLanguages === "true";
-
-    const result = await snippetService.globalSearch({
-      userId: req.user.id,
-      query,
-      limit,
-      includeRecent,
-      includeCategories,
-      includeLanguages
-    });
-
-    res.json(result);
-  } catch (error) {
-    Logger.error("Error in GET /snippets/search:", error);
-    res.status(500).json({ error: "Failed to search snippets" });
   }
 });
 
