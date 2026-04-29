@@ -49,6 +49,10 @@ interface GroupedResults {
 }
 
 const highlightMatch = (text: string, query: string): HighlightedText => {
+  if (!query || query.trim() === '') {
+    return { text, matches: [] };
+  }
+  
   const lowerQuery = query.toLowerCase();
   const lowerText = text.toLowerCase();
   const matches: { start: number; end: number }[] = [];
@@ -58,7 +62,7 @@ const highlightMatch = (text: string, query: string): HighlightedText => {
     const foundIndex = lowerText.indexOf(lowerQuery, startIndex);
     if (foundIndex === -1) break;
     matches.push({ start: foundIndex, end: foundIndex + lowerQuery.length });
-    startIndex = foundIndex + lowerQuery.length;
+    startIndex = foundIndex + lowerQuery.length || 1;
   }
   
   return { text, matches };
@@ -325,7 +329,7 @@ export const GlobalCommandPalette: React.FC = () => {
       searchData.recentSnippets,
       searchData.categories,
       searchData.languages,
-      query ? allGlobalActions : []
+      allGlobalActions
     );
   }, [searchData, query, getDefaultGlobalActions]);
 
