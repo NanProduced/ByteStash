@@ -3,7 +3,7 @@ import { Clock, PanelLeftClose, PanelLeftOpen, Search, ListFilter, Check } from 
 import { formatDistanceToNow } from "date-fns";
 import MarkdownRenderer from "../../common/markdown/MarkdownRenderer";
 import { useTranslation } from "react-i18next";
-import { Snippet } from "../../../types/snippets";
+import { Snippet, Fragment, FragmentKind } from "../../../types/snippets";
 import CategoryList from "../../categories/CategoryList";
 import {
   getLanguageLabel,
@@ -14,6 +14,7 @@ import {
 import { FullCodeBlock } from "../../editor/FullCodeBlock";
 import DownloadButton from "../../common/buttons/DownloadButton";
 import DownloadArchiveButton from "../../common/buttons/DownloadArchiveButton";
+import EmbedFragmentView from "./EmbedFragmentView";
 
 interface FullCodeViewProps {
   showTitle?: boolean;
@@ -117,6 +118,37 @@ export const FullCodeView: React.FC<FullCodeViewProps> = ({
     } catch (error) {
       console.error("Error formatting update date:", error);
       return defaultUpdateTime;
+    }
+  };
+
+  const renderFragmentContent = (fragment: Fragment) => {
+    const kind = (fragment.kind || 'code') as FragmentKind;
+
+    switch (kind) {
+      case 'embed':
+        return (
+          <EmbedFragmentView
+            fragment={fragment as Fragment & { kind: 'embed' }}
+            showLineNumbers={showLineNumbers}
+            isPublicView={isPublicView}
+            parentSnippetId={snippet.id}
+            depth={0}
+          />
+        );
+
+      case 'markdown':
+      case 'code':
+      default:
+        return (
+          <FullCodeBlock
+            code={(fragment as any).code || ""}
+            language={(fragment as any).language || "plaintext"}
+            showLineNumbers={showLineNumbers}
+            isPublicView={isPublicView}
+            snippetId={snippet.id}
+            fragmentId={fragment.id}
+          />
+        );
     }
   };
 
@@ -301,50 +333,48 @@ export const FullCodeView: React.FC<FullCodeViewProps> = ({
               <div className="flex-1 min-w-0 bg-light-bg dark:bg-dark-bg">
                 {(() => {
                   const fragment = snippet.fragments[activeFragmentIndex] || snippet.fragments[0];
+                  const kind = (fragment.kind || 'code') as FragmentKind;
+                  const isEmbed = kind === 'embed';
+                  
                   return (
                     <div className="flex flex-col h-full">
-                      {/* File Header */}
-                      <div className="flex items-center justify-between px-3 h-10 border-b border-light-border dark:border-dark-border bg-light-surface dark:bg-dark-surface shrink-0">
-                        <div className="flex items-center flex-1 min-w-0 gap-2">
-                          {!isSidebarOpen && (
-                            <button
-                              onClick={() => setIsSidebarOpen(true)}
-                              className="p-1.5 -ml-1.5 mr-1 hover:bg-light-hover dark:hover:bg-dark-hover rounded transition-colors text-light-text-secondary dark:text-dark-text-secondary flex items-center justify-center"
-                              title={translate('expandSidebar')}
-                            >
-                              <PanelLeftOpen size={16} />
-                            </button>
-                          )}
-                          <div className="shrink-0 w-3.5 h-3.5 flex items-center justify-center">
-                            {getFileIcon(fragment.file_name, fragment.language, "w-full h-full text-light-text-secondary dark:text-dark-text-secondary")}
+                      {!isEmbed && (
+                        /* File Header - only shown for code/markdown fragments */
+                        <div className="flex items-center justify-between px-3 h-10 border-b border-light-border dark:border-dark-border bg-light-surface dark:bg-dark-surface shrink-0">
+                          <div className="flex items-center flex-1 min-w-0 gap-2">
+                            {!isSidebarOpen && (
+                              <button
+                                onClick={() => setIsSidebarOpen(true)}
+                                className="p-1.5 -ml-1.5 mr-1 hover:bg-light-hover dark:hover:bg-dark-hover rounded transition-colors text-light-text-secondary dark:text-dark-text-secondary flex items-center justify-center"
+                                title={translate('expandSidebar')}
+                              >
+                                <PanelLeftOpen size={16} />
+                              </button>
+                            )}
+                            <div className="shrink-0 w-3.5 h-3.5 flex items-center justify-center">
+                              {getFileIcon(fragment.file_name, fragment.language, "w-full h-full text-light-text-secondary dark:text-dark-text-secondary")}
+                            </div>
+                            <span className="truncate font-medium text-sm text-light-text dark:text-dark-text">
+                              {getFullFileName(fragment.file_name, fragment.language)}
+                            </span>
                           </div>
-                          <span className="truncate font-medium text-sm text-light-text dark:text-dark-text">
-                            {getFullFileName(fragment.file_name, fragment.language)}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-light-text-secondary dark:text-dark-text-secondary">
+                              {getLanguageLabel(fragment.language)}
+                            </span>
+                            <DownloadButton
+                              code={(fragment as any).code}
+                              fileName={fragment.file_name}
+                              language={(fragment as any).language}
+                              className="scale-90"
+                            />
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-light-text-secondary dark:text-dark-text-secondary">
-                            {getLanguageLabel(fragment.language)}
-                          </span>
-                          <DownloadButton
-                            code={fragment.code}
-                            fileName={fragment.file_name}
-                            language={fragment.language}
-                            className="scale-90"
-                          />
-                        </div>
-                      </div>
+                      )}
 
-                      {/* Code Block */}
+                      {/* Content Block */}
                       <div className="p-0 border-t-0 flex-1 overflow-auto">
-                        <FullCodeBlock
-                          code={fragment.code}
-                          language={fragment.language}
-                          showLineNumbers={showLineNumbers}
-                          isPublicView={isPublicView}
-                          snippetId={snippet.id}
-                          fragmentId={fragment.id}
-                        />
+                        {renderFragmentContent(fragment)}
                       </div>
                     </div>
                   );
@@ -353,40 +383,40 @@ export const FullCodeView: React.FC<FullCodeViewProps> = ({
             </div>
           ) : (
             <div className="space-y-4">
-              {snippet.fragments.map((fragment, index) => (
-                <div key={index}>
-                  {/* File Header */}
-                  <div className="flex items-center justify-between px-3 mb-1 text-xs rounded text-light-text-secondary dark:text-dark-text-secondary bg-light-hover/50 dark:bg-dark-hover/50 h-7">
-                    <div className="flex items-center flex-1 min-w-0 gap-1">
-                      <div className="shrink-0 w-3 h-3 flex items-center justify-center">
-                        {getFileIcon(fragment.file_name, fragment.language, "w-full h-full text-light-text-secondary dark:text-dark-text-secondary")}
+              {snippet.fragments.map((fragment, index) => {
+                const kind = (fragment.kind || 'code') as FragmentKind;
+                const isEmbed = kind === 'embed';
+                
+                return (
+                  <div key={index}>
+                    {!isEmbed && (
+                      /* File Header - only shown for code/markdown fragments */
+                      <div className="flex items-center justify-between px-3 mb-1 text-xs rounded text-light-text-secondary dark:text-dark-text-secondary bg-light-hover/50 dark:bg-dark-hover/50 h-7">
+                        <div className="flex items-center flex-1 min-w-0 gap-1">
+                          <div className="shrink-0 w-3 h-3 flex items-center justify-center">
+                            {getFileIcon(fragment.file_name, fragment.language, "w-full h-full text-light-text-secondary dark:text-dark-text-secondary")}
+                          </div>
+                          <span className="truncate">{getFullFileName(fragment.file_name, fragment.language)}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-light-text-secondary dark:text-dark-text-secondary">
+                            {getLanguageLabel(fragment.language)}
+                          </span>
+                          <DownloadButton
+                            code={(fragment as any).code}
+                            fileName={fragment.file_name}
+                            language={(fragment as any).language}
+                            className="scale-75"
+                          />
+                        </div>
                       </div>
-                      <span className="truncate">{getFullFileName(fragment.file_name, fragment.language)}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-light-text-secondary dark:text-dark-text-secondary">
-                        {getLanguageLabel(fragment.language)}
-                      </span>
-                      <DownloadButton
-                        code={fragment.code}
-                        fileName={fragment.file_name}
-                        language={fragment.language}
-                        className="scale-75"
-                      />
-                    </div>
-                  </div>
+                    )}
 
-                  {/* Code Block */}
-                  <FullCodeBlock
-                    code={fragment.code}
-                    language={fragment.language}
-                    showLineNumbers={showLineNumbers}
-                    isPublicView={isPublicView}
-                    snippetId={snippet.id}
-                    fragmentId={fragment.id}
-                  />
-                </div>
-              ))}
+                    {/* Content Block */}
+                    {renderFragmentContent(fragment)}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

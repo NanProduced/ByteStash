@@ -72,6 +72,15 @@ router.post("/", async (req, res) => {
     );
     res.status(201).json(newSnippet);
   } catch (error) {
+    if (error.name === "EmbedValidationError") {
+      Logger.error("Embed validation error in POST /snippets:", error);
+      res.status(400).json({ 
+        error: "Embed validation failed", 
+        details: error.message,
+        code: "EMBED_VALIDATION_ERROR"
+      });
+      return;
+    }
     Logger.error("Error in POST /snippets:", error);
     res.status(500).json({ error: "Internal server error" });
   }
@@ -159,6 +168,15 @@ router.put("/:id", async (req, res) => {
       res.json(updatedSnippet);
     }
   } catch (error) {
+    if (error.name === "EmbedValidationError") {
+      Logger.error("Embed validation error in PUT /snippets/:id:", error);
+      res.status(400).json({ 
+        error: "Embed validation failed", 
+        details: error.message,
+        code: "EMBED_VALIDATION_ERROR"
+      });
+      return;
+    }
     Logger.error("Error in PUT /snippets/:id:", error);
     res.status(500).json({ error: "Internal server error" });
   }

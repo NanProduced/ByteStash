@@ -39,6 +39,9 @@ CREATE TABLE IF NOT EXISTS fragments (
     code TEXT NOT NULL,
     language TEXT NOT NULL,
     position INTEGER NOT NULL,
+    kind TEXT NOT NULL DEFAULT 'code',
+    target_snippet_id INTEGER,
+    target_fragment_id INTEGER,
     FOREIGN KEY (snippet_id) REFERENCES snippets (id) ON DELETE CASCADE
 );
 
