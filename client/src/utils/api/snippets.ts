@@ -107,7 +107,7 @@ export const setFavoriteSnippet = async (
 
 export const getSnippetVersions = async (snippetId: string): Promise<SnippetVersion[]> => {
   try {
-    return await apiClient.get<SnippetVersion[]>(`${API_ENDPOINTS.SNIPPETS}/${snippetId}/versions`);
+    return await snippetService.getSnippetVersions(snippetId);
   } catch (error) {
     console.error("Error fetching snippet versions:", error);
     throw error;
@@ -116,7 +116,7 @@ export const getSnippetVersions = async (snippetId: string): Promise<SnippetVers
 
 export const getSnippetVersionById = async (snippetId: string, versionId: string): Promise<SnippetVersion> => {
   try {
-    return await apiClient.get<SnippetVersion>(`${API_ENDPOINTS.SNIPPETS}/${snippetId}/versions/${versionId}`);
+    return await snippetService.getSnippetVersionById(snippetId, versionId);
   } catch (error) {
     console.error("Error fetching snippet version:", error);
     throw error;
@@ -125,7 +125,7 @@ export const getSnippetVersionById = async (snippetId: string, versionId: string
 
 export const rollbackToVersion = async (snippetId: string, versionId: string): Promise<Snippet> => {
   try {
-    const result = await apiClient.post<Snippet>(`${API_ENDPOINTS.SNIPPETS}/${snippetId}/versions/${versionId}/rollback`, {});
+    const result = await snippetService.rollbackToVersion(snippetId, versionId);
     window.dispatchEvent(createCustomEvent(EVENTS.SNIPPET_UPDATED));
     return result;
   } catch (error) {
