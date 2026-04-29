@@ -48,7 +48,7 @@ export const EmbedFragmentView: React.FC<EmbedFragmentViewProps> = ({
       return;
     }
 
-    if (depth >= MAX_RENDER_DEPTH) {
+    if (depth > MAX_RENDER_DEPTH) {
       setError(translate('embedFragmentView.error.depthLimitExceeded') || 'Embed depth limit exceeded');
       setLoading(false);
       return;

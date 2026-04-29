@@ -90,8 +90,8 @@ class SnippetService {
       }
 
       const visitKey = currentSnippetId 
-        ? `${currentSnippetId}-${snippetId}` 
-        : `-${snippetId}`;
+        ? `${currentSnippetId}-${snippetId}-${fragmentId || 'all'}` 
+        : `-${snippetId}-${fragmentId || 'all'}`;
       
       if (visited.has(visitKey)) {
         throw new EmbedValidationError(
@@ -111,13 +111,27 @@ class SnippetService {
         continue;
       }
 
-      for (const fragment of targetSnippet.fragments) {
-        if (fragment.kind === "embed" && fragment.target_snippet_id) {
+      if (fragmentId) {
+        const specificFragment = targetSnippet.fragments.find(
+          f => String(f.id) === String(fragmentId)
+        );
+        
+        if (specificFragment && specificFragment.kind === "embed" && specificFragment.target_snippet_id) {
           queue.push({
-            snippetId: fragment.target_snippet_id,
-            fragmentId: fragment.target_fragment_id,
+            snippetId: specificFragment.target_snippet_id,
+            fragmentId: specificFragment.target_fragment_id,
             depth: depth + 1
           });
+        }
+      } else {
+        for (const fragment of targetSnippet.fragments) {
+          if (fragment.kind === "embed" && fragment.target_snippet_id) {
+            queue.push({
+              snippetId: fragment.target_snippet_id,
+              fragmentId: fragment.target_fragment_id,
+              depth: depth + 1
+            });
+          }
         }
       }
     }

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import "prismjs";
 import "prismjs/components/prism-markup-templating.js";
 import "prismjs/themes/prism.css";
-import { Plus, Search, PanelLeftClose, PanelLeftOpen, ListFilter, Check, Code, FileText, Link2, ChevronDown } from "lucide-react";
+import { Plus, Search, PanelLeftClose, PanelLeftOpen, ListFilter, Check, Code, FileText, Link2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Switch } from "../../../components/common/switch/Switch";
 import { Fragment, Snippet, FragmentKind } from "../../../types/snippets";
@@ -658,21 +658,23 @@ const EditSnippetModal: React.FC<EditSnippetModalProps> = ({
                         )}
                       </div>
                       <div className="p-2 border-t border-light-border dark:border-dark-border bg-light-surface dark:bg-dark-surface" ref={addFragmentMenuRef}>
-                        <button 
-                          type="button" 
-                          onClick={() => setIsAddFragmentMenuOpen(!isAddFragmentMenuOpen)}
-                          className="w-full flex items-center justify-center gap-1 p-1.5 text-xs font-semibold rounded bg-light-primary/10 dark:bg-dark-primary/10 text-light-primary dark:text-dark-primary hover:bg-light-primary/20 dark:hover:bg-dark-primary/20 transition-colors"
-                        >
-                          <Plus size={14}/> {translate('editSnippetModal.form.codeFragments.add')}
-                          <ChevronDown size={12} className={`transition-transform ${isAddFragmentMenuOpen ? 'rotate-180' : ''}`} />
-                        </button>
-                        
-                        {isAddFragmentMenuOpen && (
-                          <div className="absolute bottom-full left-2 right-2 mb-1 w-auto bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border rounded-lg shadow-xl z-50 py-1 flex flex-col">
+                        {!isAddFragmentMenuOpen ? (
+                          <button 
+                            type="button" 
+                            onClick={() => setIsAddFragmentMenuOpen(true)}
+                            className="w-full flex items-center justify-center gap-1 p-1.5 text-xs font-semibold rounded bg-light-primary/10 dark:bg-dark-primary/10 text-light-primary dark:text-dark-primary hover:bg-light-primary/20 dark:hover:bg-dark-primary/20 transition-colors"
+                          >
+                            <Plus size={14}/> {translate('editSnippetModal.form.codeFragments.add')}
+                          </button>
+                        ) : (
+                          <div className="space-y-1">
+                            <div className="text-xs text-light-text-secondary dark:text-dark-text-secondary px-2 mb-1">
+                              {translate('editSnippetModal.form.codeFragments.selectType') || 'Select fragment type'}
+                            </div>
                             <button
                               type="button"
                               onClick={() => handleAddFragment("code")}
-                              className="w-full px-3 py-2 flex items-center gap-2 text-sm text-light-text dark:text-dark-text hover:bg-light-hover dark:hover:bg-dark-hover transition-colors"
+                              className="w-full px-3 py-2 flex items-center gap-2 text-sm text-light-text dark:text-dark-text hover:bg-light-hover dark:hover:bg-dark-hover rounded transition-colors"
                             >
                               <Code size={14} className="text-light-text-secondary dark:text-dark-text-secondary" />
                               <span>Code</span>
@@ -680,7 +682,7 @@ const EditSnippetModal: React.FC<EditSnippetModalProps> = ({
                             <button
                               type="button"
                               onClick={() => handleAddFragment("markdown")}
-                              className="w-full px-3 py-2 flex items-center gap-2 text-sm text-light-text dark:text-dark-text hover:bg-light-hover dark:hover:bg-dark-hover transition-colors"
+                              className="w-full px-3 py-2 flex items-center gap-2 text-sm text-light-text dark:text-dark-text hover:bg-light-hover dark:hover:bg-dark-hover rounded transition-colors"
                             >
                               <FileText size={14} className="text-light-text-secondary dark:text-dark-text-secondary" />
                               <span>Markdown</span>
@@ -688,10 +690,17 @@ const EditSnippetModal: React.FC<EditSnippetModalProps> = ({
                             <button
                               type="button"
                               onClick={() => handleAddFragment("embed")}
-                              className="w-full px-3 py-2 flex items-center gap-2 text-sm text-light-text dark:text-dark-text hover:bg-light-hover dark:hover:bg-dark-hover transition-colors"
+                              className="w-full px-3 py-2 flex items-center gap-2 text-sm text-light-text dark:text-dark-text hover:bg-light-hover dark:hover:bg-dark-hover rounded transition-colors"
                             >
                               <Link2 size={14} className="text-light-text-secondary dark:text-dark-text-secondary" />
                               <span>Embed Snippet</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setIsAddFragmentMenuOpen(false)}
+                              className="w-full px-3 py-1.5 text-xs text-light-text-secondary dark:text-dark-text-secondary hover:bg-light-hover dark:hover:bg-dark-hover rounded transition-colors mt-1"
+                            >
+                              Cancel
                             </button>
                           </div>
                         )}
