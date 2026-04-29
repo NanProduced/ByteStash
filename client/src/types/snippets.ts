@@ -1,10 +1,33 @@
-export interface CodeFragment {
+export type FragmentKind = 'code' | 'markdown' | 'embed';
+
+export interface BaseFragment {
   id?: string;
   file_name: string;
+  position: number;
+  kind?: FragmentKind;
+}
+
+export interface CodeFragment extends BaseFragment {
+  kind: 'code';
   code: string;
   language: string;
-  position: number;
 }
+
+export interface MarkdownFragment extends BaseFragment {
+  kind: 'markdown';
+  code: string;
+  language: 'markdown';
+}
+
+export interface EmbedFragment extends BaseFragment {
+  kind: 'embed';
+  code: '';
+  language: '';
+  target_snippet_id: string;
+  target_fragment_id?: string;
+}
+
+export type Fragment = CodeFragment | MarkdownFragment | EmbedFragment;
 
 export interface Snippet {
   id: string;
@@ -13,7 +36,7 @@ export interface Snippet {
   updated_at: string;
   expiry_date?: string;
   categories: string[];
-  fragments: CodeFragment[];
+  fragments: Fragment[];
   share_count?: number;
   is_public: number;
   is_pinned: number;

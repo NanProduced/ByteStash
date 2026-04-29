@@ -1,4 +1,4 @@
-import { CodeFragment, Snippet } from "../../types/snippets";
+import { Fragment, Snippet } from "../../types/snippets";
 import * as monaco from "monaco-editor";
 import { 
   FileJson, 
@@ -578,7 +578,7 @@ export const getAllLanguageAliases = (): Record<string, string[]> => {
   }, {} as Record<string, string[]>);
 };
 
-export const getUniqueLanguages = (fragments: CodeFragment[]): string => {
+export const getUniqueLanguages = (fragments: Fragment[]): string => {
   if (!fragments || fragments.length === 0) {
     return "";
   }

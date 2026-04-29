@@ -5,7 +5,7 @@ import "prismjs/themes/prism.css";
 import { Plus, Search, PanelLeftClose, PanelLeftOpen, ListFilter, Check } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Switch } from "../../../components/common/switch/Switch";
-import { CodeFragment, Snippet } from "../../../types/snippets";
+import { Fragment, Snippet } from "../../../types/snippets";
 import { detectLanguageFromFileName, getFileIcon, getFullFileName } from "../../../utils/language/languageUtils";
 import CategoryList from "../../categories/CategoryList";
 import CategorySuggestions from "../../categories/CategorySuggestions";
@@ -34,7 +34,7 @@ const EditSnippetModal: React.FC<EditSnippetModalProps> = ({
   const { t: translate } = useTranslation('components/snippets/edit');
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [fragments, setFragments] = useState<CodeFragment[]>([]);
+  const [fragments, setFragments] = useState<Fragment[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [categoryInput, setCategoryInput] = useState("");
   const [error, setError] = useState("");
@@ -155,6 +155,7 @@ const EditSnippetModal: React.FC<EditSnippetModalProps> = ({
         code: "",
         language: "",
         position: 0,
+        kind: "code" as const,
       },
     ]);
     setCategories([]);
@@ -211,6 +212,7 @@ const EditSnippetModal: React.FC<EditSnippetModalProps> = ({
           code: "",
           language: "",
           position: current.length,
+          kind: "code" as const,
         },
       ];
       setActiveFragmentIndex(newFragments.length - 1);
@@ -232,6 +234,7 @@ const EditSnippetModal: React.FC<EditSnippetModalProps> = ({
         {
           ...fileData,
           position: current.length,
+          kind: "code" as const,
         },
       ];
       setActiveFragmentIndex(newFragments.length - 1);
@@ -250,7 +253,7 @@ const EditSnippetModal: React.FC<EditSnippetModalProps> = ({
 
   const handleUpdateFragment = (
     index: number,
-    updatedFragment: CodeFragment
+    updatedFragment: Fragment
   ) => {
     setFragments((current) => {
       const newFragments = [...current];

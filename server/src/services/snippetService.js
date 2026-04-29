@@ -1,6 +1,15 @@
 import Logger from "../logger.js";
 import snippetRepository from "../repositories/snippetRepository.js";
 
+const MAX_EMBED_DEPTH = 5;
+
+class EmbedValidationError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "EmbedValidationError";
+  }
+}
+
 class SnippetService {
   async getAllSnippets(userId) {
     try {
@@ -26,9 +35,102 @@ class SnippetService {
     }
   }
 
+  async validateEmbedFragments(fragments, currentUserId, currentSnippetId = null) {
+    const embedFragments = fragments.filter(f => f.kind === "embed");
+    
+    if (embedFragments.length === 0) {
+      return;
+    }
+
+    for (const fragment of embedFragments) {
+      if (!fragment.target_snippet_id) {
+        throw new EmbedValidationError("Embed fragment must have a target snippet ID");
+      }
+
+      const targetSnippetId = fragment.target_snippet_id;
+      
+      const targetSnippet = await snippetRepository.findById(targetSnippetId, currentUserId);
+      if (!targetSnippet) {
+        throw new EmbedValidationError(
+          `Target snippet ${targetSnippetId} not found or you don't have permission to access it`
+        );
+      }
+
+      await this.checkEmbedCycle(
+        targetSnippetId,
+        fragment.target_fragment_id,
+        currentUserId,
+        currentSnippetId
+      );
+    }
+  }
+
+  async checkEmbedCycle(
+    startSnippetId,
+    startFragmentId,
+    currentUserId,
+    currentSnippetId = null
+  ) {
+    const visited = new Set();
+    const queue = [
+      { 
+        snippetId: startSnippetId, 
+        fragmentId: startFragmentId, 
+        depth: 1 
+      }
+    ];
+
+    while (queue.length > 0) {
+      const { snippetId, fragmentId, depth } = queue.shift();
+      
+      if (depth > MAX_EMBED_DEPTH) {
+        throw new EmbedValidationError(
+          `Embed depth exceeds maximum limit of ${MAX_EMBED_DEPTH} levels`
+        );
+      }
+
+      const visitKey = currentSnippetId 
+        ? `${currentSnippetId}-${snippetId}` 
+        : `-${snippetId}`;
+      
+      if (visited.has(visitKey)) {
+        throw new EmbedValidationError(
+          "Circular embed reference detected"
+        );
+      }
+      visited.add(visitKey);
+
+      if (currentSnippetId && String(snippetId) === String(currentSnippetId)) {
+        throw new EmbedValidationError(
+          "Cannot embed a snippet into itself"
+        );
+      }
+
+      const targetSnippet = await snippetRepository.findById(snippetId, currentUserId);
+      if (!targetSnippet) {
+        continue;
+      }
+
+      for (const fragment of targetSnippet.fragments) {
+        if (fragment.kind === "embed" && fragment.target_snippet_id) {
+          queue.push({
+            snippetId: fragment.target_snippet_id,
+            fragmentId: fragment.target_fragment_id,
+            depth: depth + 1
+          });
+        }
+      }
+    }
+  }
+
   async createSnippet(snippetData, userId) {
     try {
       Logger.debug("Service: Creating new snippet for user:", userId);
+      
+      if (snippetData.fragments && snippetData.fragments.length > 0) {
+        await this.validateEmbedFragments(snippetData.fragments, userId);
+      }
+
       const result = await snippetRepository.create({
         ...snippetData,
         userId,
@@ -37,6 +139,9 @@ class SnippetService {
       Logger.debug("Service: Created snippet with ID:", result.id);
       return result;
     } catch (error) {
+      if (error instanceof EmbedValidationError) {
+        throw error;
+      }
       Logger.error("Service Error - createSnippet:", error);
       throw error;
     }
@@ -122,6 +227,11 @@ class SnippetService {
   async updateSnippet(id, snippetData, userId) {
     try {
       Logger.debug("Service: Updating snippet:", id, "for user:", userId);
+      
+      if (snippetData.fragments && snippetData.fragments.length > 0) {
+        await this.validateEmbedFragments(snippetData.fragments, userId, id);
+      }
+
       const result = await snippetRepository.update(
         id,
         {
@@ -136,6 +246,9 @@ class SnippetService {
       );
       return result;
     } catch (error) {
+      if (error instanceof EmbedValidationError) {
+        throw error;
+      }
       Logger.error("Service Error - updateSnippet:", error);
       throw error;
     }

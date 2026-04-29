@@ -86,8 +86,11 @@ class SnippetRepository {
           file_name,
           code,
           language,
-          position
-        ) VALUES (?, ?, ?, ?, ?)
+          position,
+          kind,
+          target_snippet_id,
+          target_fragment_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
       this.insertCategoryStmt = db.prepare(`
@@ -209,7 +212,7 @@ class SnippetRepository {
       `); // returns the deleted snippet
 
       this.selectFragmentsStmt = db.prepare(`
-        SELECT id, file_name, code, language, position 
+        SELECT id, file_name, code, language, position, kind, target_snippet_id, target_fragment_id
         FROM fragments
         WHERE snippet_id = ?
         ORDER BY position
@@ -291,7 +294,10 @@ class SnippetRepository {
             fragment.file_name || `file${index + 1}`,
             fragment.code || "",
             fragment.language || "plaintext",
-            fragment.position || index
+            fragment.position || index,
+            fragment.kind || "code",
+            fragment.target_snippet_id || null,
+            fragment.target_fragment_id || null
           );
         });
 
@@ -340,7 +346,10 @@ class SnippetRepository {
             fragment.file_name || `file${index + 1}`,
             fragment.code || "",
             fragment.language || "plaintext",
-            fragment.position || index
+            fragment.position || index,
+            fragment.kind || "code",
+            fragment.target_snippet_id || null,
+            fragment.target_fragment_id || null
           );
         });
 
