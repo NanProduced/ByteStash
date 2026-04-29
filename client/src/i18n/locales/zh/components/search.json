@@ -40,7 +40,10 @@
     },
     "actions": {
       "newSnippet": "新建代码片段",
-      "settings": "设置"
+      "settings": "设置",
+      "goHome": "前往我的代码片段",
+      "goPublic": "浏览公开代码片段",
+      "goRecycle": "前往回收站"
     },
     "snippetActions": {
       "view": "查看代码片段",
@@ -63,7 +66,10 @@
       "madePrivate": "代码片段已设为私有",
       "toggleFailed": "切换可见性失败",
       "deleted": "代码片段已移至回收站",
-      "deleteFailed": "删除代码片段失败"
+      "deleteFailed": "删除代码片段失败",
+      "navigateToCreate": "请前往首页创建新代码片段",
+      "navigateToSettings": "请前往首页打开设置",
+      "navigateToEdit": "请前往首页编辑 \"{{title}}\""
     },
     "confirmDelete": {
       "title": "删除代码片段",

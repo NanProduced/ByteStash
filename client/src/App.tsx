@@ -19,6 +19,7 @@ import EmbedView from './components/snippets/embed/EmbedView';
 import RecycleSnippetStorage from './components/snippets/view/recycle/RecycleSnippetStorage';
 import { OIDCLogoutCallback } from './components/auth/oidc/OIDCLogoutCallback';
 import { AdminPage } from './components/admin/AdminPage';
+import { GlobalCommandPalette } from './components/search/GlobalCommandPalette';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -47,11 +48,7 @@ const AuthenticatedApp: React.FC = () => {
     return <Navigate to={ROUTES.LOGIN} replace />;
   }
 
-  return (
-    <SearchProvider>
-      <SnippetStorage />
-    </SearchProvider>
-  );
+  return <SnippetStorage />;
 };
 
 const EmbedViewWrapper: React.FC = () => {
@@ -77,6 +74,27 @@ const EmbedViewWrapper: React.FC = () => {
   );
 };
 
+const AppRoutes: React.FC = () => {
+  return (
+    <>
+      <Routes>
+        <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+        <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
+        <Route path={ROUTES.AUTH_CALLBACK} element={<OIDCCallback />} />
+        <Route path={ROUTES.LOGOUT_CALLBACK} element={<OIDCLogoutCallback />} />
+        <Route path={ROUTES.SHARED_SNIPPET} element={<SharedSnippetView />} />
+        <Route path={ROUTES.PUBLIC_SNIPPETS} element={<PublicSnippetStorage />} />
+        <Route path={ROUTES.RECYCLE} element={<RecycleSnippetStorage />} />
+        <Route path={ROUTES.EMBED} element={<EmbedViewWrapper />} />
+        <Route path={ROUTES.SNIPPET} element={<SnippetPage />} />
+        <Route path="/admin/*" element={<AdminPage />} />
+        <Route path={ROUTES.HOME} element={<AuthenticatedApp />} />
+      </Routes>
+      <GlobalCommandPalette />
+    </>
+  );
+};
+
 const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
@@ -85,19 +103,9 @@ const App: React.FC = () => {
           <div className="min-h-screen bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text">
             <ToastProvider>
               <AuthProvider>
-                <Routes>
-                  <Route path={ROUTES.LOGIN} element={<LoginPage />} />
-                  <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
-                  <Route path={ROUTES.AUTH_CALLBACK} element={<OIDCCallback />} />
-                  <Route path={ROUTES.LOGOUT_CALLBACK} element={<OIDCLogoutCallback />} />
-                  <Route path={ROUTES.SHARED_SNIPPET} element={<SharedSnippetView />} />
-                  <Route path={ROUTES.PUBLIC_SNIPPETS} element={<PublicSnippetStorage />} />
-                  <Route path={ROUTES.RECYCLE} element={<RecycleSnippetStorage />} />
-                  <Route path={ROUTES.EMBED} element={<EmbedViewWrapper />} />
-                  <Route path={ROUTES.SNIPPET} element={<SnippetPage />} />
-                  <Route path="/admin/*" element={<AdminPage />} />
-                  <Route path={ROUTES.HOME} element={<AuthenticatedApp />} />
-                </Routes>
+                <SearchProvider>
+                  <AppRoutes />
+                </SearchProvider>
               </AuthProvider>
             </ToastProvider>
           </div>

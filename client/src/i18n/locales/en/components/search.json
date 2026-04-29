@@ -40,7 +40,10 @@
     },
     "actions": {
       "newSnippet": "New Snippet",
-      "settings": "Settings"
+      "settings": "Settings",
+      "goHome": "Go to My Snippets",
+      "goPublic": "Browse Public Snippets",
+      "goRecycle": "Go to Recycle Bin"
     },
     "snippetActions": {
       "view": "View Snippet",
@@ -63,7 +66,10 @@
       "madePrivate": "Snippet made private",
       "toggleFailed": "Failed to toggle visibility",
       "deleted": "Snippet moved to recycle bin",
-      "deleteFailed": "Failed to delete snippet"
+      "deleteFailed": "Failed to delete snippet",
+      "navigateToCreate": "Navigate to home to create a new snippet",
+      "navigateToSettings": "Navigate to home to open settings",
+      "navigateToEdit": "Navigate to home to edit \"{{title}}\""
     },
     "confirmDelete": {
       "title": "Delete Snippet",
