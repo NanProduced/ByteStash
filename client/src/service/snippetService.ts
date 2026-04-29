@@ -1,5 +1,5 @@
 import { apiClient } from "../utils/api/apiClient";
-import { Snippet } from "../types/snippets";
+import { Snippet, SnippetVersion } from "../types/snippets";
 import { API_ENDPOINTS } from "../constants/api";
 
 export const snippetService = {
@@ -159,6 +159,28 @@ export const snippetService = {
   }> {
     return apiClient.get<any>(
       `${API_ENDPOINTS.PUBLIC}/metadata`
+    );
+  },
+
+  async getSnippetVersions(snippetId: string): Promise<SnippetVersion[]> {
+    return apiClient.get<SnippetVersion[]>(
+      `${API_ENDPOINTS.SNIPPETS}/${snippetId}/versions`,
+      { requiresAuth: true }
+    );
+  },
+
+  async getSnippetVersionById(snippetId: string, versionId: string): Promise<SnippetVersion> {
+    return apiClient.get<SnippetVersion>(
+      `${API_ENDPOINTS.SNIPPETS}/${snippetId}/versions/${versionId}`,
+      { requiresAuth: true }
+    );
+  },
+
+  async rollbackToVersion(snippetId: string, versionId: string): Promise<Snippet> {
+    return apiClient.post<Snippet>(
+      `${API_ENDPOINTS.SNIPPETS}/${snippetId}/versions/${versionId}/rollback`,
+      {},
+      { requiresAuth: true }
     );
   },
 };
