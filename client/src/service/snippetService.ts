@@ -161,4 +161,28 @@ export const snippetService = {
       `${API_ENDPOINTS.PUBLIC}/metadata`
     );
   },
+
+  async globalSearch(params: {
+    query?: string;
+    limit?: number;
+    includeRecent?: boolean;
+    includeCategories?: boolean;
+    includeLanguages?: boolean;
+  }): Promise<{
+    snippets: any[];
+    recentSnippets: any[];
+    categories: string[];
+    languages: string[];
+  }> {
+    const queryString = new URLSearchParams(
+      Object.entries(params)
+        .filter(([_, v]) => v !== undefined && v !== null && v !== '')
+        .map(([k, v]) => [k, String(v)])
+    ).toString();
+
+    return apiClient.get<any>(
+      `${API_ENDPOINTS.SNIPPETS_SEARCH}${queryString ? '?' + queryString : ''}`,
+      { requiresAuth: true }
+    );
+  },
 };

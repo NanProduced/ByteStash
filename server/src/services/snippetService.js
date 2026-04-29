@@ -251,6 +251,32 @@ class SnippetService {
       throw error;
     }
   }
+
+  async globalSearch({ userId, query, limit, includeRecent, includeCategories, includeLanguages }) {
+    try {
+      Logger.debug(
+        "Service: Global search for",
+        userId !== null ? `user: ${userId}` : "public snippets",
+        "with query:",
+        query || "(empty)"
+      );
+      const result = await snippetRepository.globalSearch({
+        userId,
+        query,
+        limit,
+        includeRecent,
+        includeCategories,
+        includeLanguages
+      });
+      Logger.debug(
+        `Service: Global search returned ${result.snippets.length} snippets, ${result.recentSnippets.length} recent, ${result.categories.length} categories, ${result.languages.length} languages`
+      );
+      return result;
+    } catch (error) {
+      Logger.error("Service Error - globalSearch:", error);
+      throw error;
+    }
+  }
 }
 
 export default new SnippetService();

@@ -26,5 +26,48 @@
   "view": {
     "grid": "Grid view",
     "list": "List view"
+  },
+  "commandPalette": {
+    "placeholder": "Type to search snippets, actions, categories...",
+    "noResults": "No results found",
+    "back": "Back",
+    "sections": {
+      "recent": "Recent",
+      "snippets": "Snippets",
+      "actions": "Actions",
+      "categories": "Categories",
+      "languages": "Languages"
+    },
+    "actions": {
+      "newSnippet": "New Snippet",
+      "settings": "Settings"
+    },
+    "snippetActions": {
+      "view": "View Snippet",
+      "copy": "Copy Code",
+      "edit": "Edit Snippet",
+      "makePublic": "Make Public",
+      "makePrivate": "Make Private",
+      "delete": "Delete Snippet"
+    },
+    "hints": {
+      "navigate": "Navigate",
+      "execute": "Execute",
+      "snippetMenu": "Snippet menu",
+      "close": "Close"
+    },
+    "toast": {
+      "copied": "Snippet copied to clipboard",
+      "copyFailed": "Failed to copy snippet",
+      "madePublic": "Snippet made public",
+      "madePrivate": "Snippet made private",
+      "toggleFailed": "Failed to toggle visibility",
+      "deleted": "Snippet moved to recycle bin",
+      "deleteFailed": "Failed to delete snippet"
+    },
+    "confirmDelete": {
+      "title": "Delete Snippet",
+      "message": "Are you sure you want to move \"{{title}}\" to the recycle bin?"
+    }
   }
 }

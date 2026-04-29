@@ -16,6 +16,39 @@ Password: demodemo
 - Create and Edit Snippets: Easily add new code snippets or update existing ones with an intuitive interface.
 - Filter by Language and Content: Quickly find the right snippet by filtering based on programming language or keywords in the content.
 - Secure Storage: All snippets are securely stored in a sqlite database, ensuring your code remains safe and accessible only to you.
+- **Global Command Palette**: Press `Cmd/Ctrl + K` anywhere to instantly search snippets, navigate, and perform actions.
+
+## Global Search / Command Palette
+ByteStash features a powerful global command palette similar to VS Code, Alfred, or Raycast.
+
+### Keyboard Shortcuts
+| Shortcut | Action |
+|----------|--------|
+| `Cmd/Ctrl + K` | Open/close the global search palette |
+| `↑` / `↓` | Navigate through search results |
+| `Enter` | Execute the selected item (open snippet, run action) |
+| `Esc` | Close the palette |
+| `Tab` (when snippet selected) | Open snippet action menu |
+| `←` | Go back from snippet action menu |
+
+### Features
+- **Fuzzy Search**: Search snippets by title, description, tags, language, and even code content
+- **Result Highlighting**: Matched text is highlighted in yellow for easy identification
+- **Categorized Results**: Results are grouped into sections:
+  - **Recent Snippets**: Shows your last 5 edited snippets (when no search query)
+  - **Snippets**: Matching code snippets
+  - **Actions**: Quick actions like "New Snippet" or "Settings"
+  - **Categories**: Filter by category tags
+  - **Languages**: Filter by programming language
+- **Snippet Actions Menu**: Press `Tab` on a selected snippet to reveal:
+  - View / Open snippet
+  - Copy all code to clipboard
+  - Edit snippet
+  - Toggle public/private visibility
+  - Delete snippet
+
+### Mobile Support
+On mobile devices, the command palette opens as a full-screen sheet with smooth animations. The search input is automatically focused for quick access.
 
 ## Howto
 ### Unraid
